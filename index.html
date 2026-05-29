@@ -478,12 +478,7 @@ Tot zo!`
             {loading && <div className="msg assistant"><div className="msg-avatar">🤖</div><div className="msg-bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
             <div ref={messagesEndRef}/>
           </div>
-          <div className="invite-panel">
-            <label>{t("Stakeholder uitnodigen:","Invite stakeholder:")}</label>
-            <input className="input" style={{flex:1,padding:".4rem .75rem"}} placeholder={t("email@bedrijf.nl","email@company.com")} value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} />
-            <button className="btn btn-ghost btn-sm" onClick={inviteStakeholder}>{t("Uitnodigen","Invite")}</button>
-            <span style={{fontSize:".75rem",color:"#444"}}>{activeSession.members?.length||1} {t("deelnemers","participants")}</span>
-          </div>
+
           <div className="chat-input-area">
             <textarea className="chat-textarea" placeholder={t("Typ je antwoord... (Enter = versturen, Shift+Enter = nieuwe regel)","Type your answer... (Enter = send, Shift+Enter = new line)")} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}}} rows={1}/>
             <button className="send-btn" onClick={sendMessage} disabled={loading||!input.trim()}>↑</button>
