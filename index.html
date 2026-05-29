@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Problem Discovery</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyApaudujzFMRcItshMqTWCC4qqe-qMfg88",
+      authDomain: "problemanalyses.firebaseapp.com",
+      projectId: "problemanalyses",
+      storageBucket: "problemanalyses.firebasestorage.app",
+      messagingSenderId: "322364734913",
+      appId: "1:322364734913:web:a2649459f20d74daca8340"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window._fbAuth = getAuth(app);
+    window._fbDb = getFirestore(app);
+    window._fbGoogleProvider = new GoogleAuthProvider();
+    window._fbFns = {
+      signInWithPopup, signOut, onAuthStateChanged,
+      collection, addDoc, updateDoc, doc, onSnapshot,
+      serverTimestamp, query, orderBy, setDoc
+    };
+    window._fbReady = true;
+    window.dispatchEvent(new Event("fb-ready"));
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#0a0a0f;color:#e8e8f0;min-height:100vh}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:4px}
+    .app{display:flex;flex-direction:column;min-height:100vh}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(10,10,15,.95);border-bottom:1px solid #1a1a2e;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);flex-wrap:wrap;gap:.5rem}
+    .nav-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .nav-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+    .btn{padding:.5rem 1.2rem;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;transition:all .2s}
+    .btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+    .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-ghost{background:transparent;color:#888;border:1px solid #2a2a3a}
+    .btn-ghost:hover{border-color:#6366f1;color:#a78bfa}
+    .btn-sm{padding:.3rem .8rem;font-size:.78rem}
+    .lang-toggle{display:flex;background:#1a1a2e;border-radius:6px;overflow:hidden}
+    .lang-btn{padding:.3rem .7rem;border:none;background:transparent;color:#666;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .lang-btn.active{background:#6366f1;color:#fff}
+    .user-chip{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#888}
+    .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
+    .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 30% 50%,#1a1030 0%,#0a0a0f 60%)}
+    .login-card{text-align:center;padding:3rem;max-width:420px}
+    .login-icon{font-size:3rem;margin-bottom:1.5rem}
+    .login-card h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:.5rem;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .login-card p{color:#666;margin-bottom:2rem;line-height:1.6}
+    .google-btn{display:flex;align-items:center;gap:.75rem;background:#fff;color:#333;border:none;padding:.8rem 2rem;border-radius:10px;font-size:.95rem;font-weight:500;cursor:pointer;margin:0 auto;transition:all .2s;font-family:'DM Sans',sans-serif}
+    .google-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,.3)}
+    .dashboard{padding:2rem;max-width:900px;margin:0 auto}
+    .dashboard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem}
+    .dashboard-header h2{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700}
+    .sessions-grid{display:grid;gap:1rem}
+    .session-card{background:#111118;border:1px solid #1a1a2e;border-radius:12px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
+    .session-card:hover{border-color:#6366f1;transform:translateY(-1px);background:#13131f}
+    .session-title{font-family:'Syne',sans-serif;font-weight:600;margin-bottom:.25rem}
+    .session-meta{font-size:.78rem;color:#555}
+    .session-badge{background:#1a1a2e;color:#6366f1;font-size:.72rem;padding:.2rem .6rem;border-radius:20px;font-weight:500;white-space:nowrap}
+    .empty-state{text-align:center;padding:4rem 2rem;color:#444}
+    .empty-state .icon{font-size:2.5rem;margin-bottom:1rem}
+    .new-session-form{background:#111118;border:1px dashed #2a2a3a;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+    .input{background:#0d0d16;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:8px;padding:.6rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;width:100%;transition:border .2s}
+    .input:focus{outline:none;border-color:#6366f1}
+    .input-row{display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
+    .session-layout{display:flex;flex-direction:column;height:calc(100vh - 57px)}
+    .session-topbar{display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;background:#0d0d16;border-bottom:1px solid #1a1a2e;flex-shrink:0;overflow-x:auto}
+    .session-title-bar{font-family:'Syne',sans-serif;font-weight:600;font-size:.95rem;white-space:nowrap}
+    .stage-pills{display:flex;gap:.4rem;overflow-x:auto;flex:1}
+    .stage-pill{padding:.25rem .75rem;border-radius:20px;font-size:.72rem;font-weight:500;white-space:nowrap;border:1px solid #2a2a3a;color:#555;background:transparent}
+    .stage-pill.done{border-color:#3a3a5a;color:#6366f1;background:rgba(99,102,241,.1)}
+    .stage-pill.active{border-color:#6366f1;color:#fff;background:#6366f1}
+    .chat-area{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+    .msg{display:flex;gap:.75rem;max-width:720px}
+    .msg.user{flex-direction:row-reverse;align-self:flex-end}
+    .msg-bubble{padding:.85rem 1.1rem;border-radius:14px;font-size:.88rem;line-height:1.6;max-width:540px;white-space:pre-wrap}
+    .msg.assistant .msg-bubble{background:#111118;border:1px solid #1a1a2e;color:#d4d4e8;border-radius:4px 14px 14px 14px}
+    .msg.user .msg-bubble{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:14px 4px 14px 14px}
+    .msg-avatar{width:30px;height:30px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
+    .typing{display:flex;gap:4px;padding:.5rem}
+    .dot{width:6px;height:6px;border-radius:50%;background:#6366f1;animation:bounce 1.2s infinite}
+    .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+    @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+    .invite-panel{background:#0f0f1a;border-top:1px solid #1a1a2e;padding:.75rem 1.5rem;display:flex;gap:.75rem;align-items:center;flex-shrink:0;flex-wrap:wrap}
+    .invite-panel label{font-size:.78rem;color:#666;white-space:nowrap}
+    .chat-input-area{padding:1rem 1.5rem;background:#0d0d16;border-top:1px solid #1a1a2e;display:flex;gap:.75rem;align-items:flex-end;flex-shrink:0}
+    .chat-textarea{flex:1;background:#111118;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:10px;padding:.75rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;resize:none;min-height:44px;max-height:140px;transition:border .2s}
+    .chat-textarea:focus{outline:none;border-color:#6366f1}
+    .send-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;width:44px;height:44px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .2s;flex-shrink:0}
+    .send-btn:hover{opacity:.9}
+    .send-btn:disabled{opacity:.4;cursor:not-allowed}
+    .doc-view{padding:2rem;max-width:820px;margin:0 auto}
+    .doc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
+    .doc-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .doc-section{background:#111118;border:1px solid #1a1a2e;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+    .doc-section-title{font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6366f1;margin-bottom:.75rem}
+    .doc-section p{color:#c4c4d4;line-height:1.7;font-size:.9rem}
+    .doc-list{list-style:none;display:flex;flex-direction:column;gap:.5rem}
+    .doc-list li{display:flex;gap:.5rem;color:#c4c4d4;font-size:.9rem;line-height:1.5}
+    .doc-list li::before{content:"→";color:#6366f1;flex-shrink:0}
+    .role-card{background:#0d0d16;border:1px solid #1a1a2e;border-radius:8px;padding:.75rem 1rem;margin-bottom:.5rem}
+    .role-name{font-weight:600;font-size:.85rem;margin-bottom:.2rem;color:#a78bfa}
+    .role-desc{font-size:.82rem;color:#888}
+    .oq-table{width:100%;border-collapse:collapse;font-size:.82rem}
+    .oq-table th{text-align:left;padding:.5rem .75rem;color:#555;font-weight:500;border-bottom:1px solid #1a1a2e}
+    .oq-table td{padding:.6rem .75rem;color:#c4c4d4;border-bottom:1px solid #0f0f1a;vertical-align:top;line-height:1.5}
+    .oq-table tr:last-child td{border-bottom:none}
+    .owner-chip{background:rgba(99,102,241,.15);color:#a78bfa;padding:.15rem .5rem;border-radius:4px;font-size:.75rem}
+    .textarea-edit{background:#0d0d16;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:6px;padding:.5rem .75rem;font-family:'DM Sans',sans-serif;font-size:.85rem;width:100%;resize:vertical;min-height:60px}
+    .textarea-edit:focus{outline:none;border-color:#6366f1}
+    .input-edit{background:#0d0d16;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:6px;padding:.4rem .6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;width:100%}
+    .input-edit:focus{outline:none;border-color:#6366f1}
+    .add-row-btn{background:transparent;border:1px dashed #2a2a3a;color:#555;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.78rem;margin-top:.5rem;font-family:'DM Sans',sans-serif}
+    .add-row-btn:hover{border-color:#6366f1;color:#a78bfa}
+    .avg-grid{display:grid;gap:.75rem}
+    .avg-item label{display:block;font-size:.72rem;color:#555;margin-bottom:.3rem;font-weight:500}
+    .avg-item p{font-size:.88rem;color:#c4c4d4}
+    .scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+    @media(max-width:600px){.scope-grid{grid-template-columns:1fr}.nav{padding:.75rem 1rem}.dashboard{padding:1rem}.doc-view{padding:1rem}}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-type="module">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const INTERVIEW_STAGES = [
+  { id:"context", label:{nl:"Context",en:"Context"}, questions:[
+    {nl:"Wat is de naam of werktitel van dit initiatief?",en:"What is the name or working title of this initiative?"},
+    {nl:"Beschrijf in één zin wat je wil oplossen of bereiken.",en:"Describe in one sentence what you want to solve or achieve."},
+    {nl:"In welke afdeling of context speelt dit zich af?",en:"In which department or context does this take place?"},
+  ]},
+  { id:"problem", label:{nl:"Het Probleem",en:"The Problem"}, questions:[
+    {nl:"Welk concreet probleem ervaren mensen nu? Kun je een voorbeeld geven van wanneer dit misgaat?",en:"What concrete problem are people experiencing now? Can you give an example of when this goes wrong?"},
+    {nl:"Hoe lang bestaat dit probleem al en waarom wordt het nu pas opgepakt?",en:"How long has this problem existed and why is it only being addressed now?"},
+    {nl:"Wat zijn de gevolgen als we dit probleem NIET oplossen? Wat kost het de organisatie?",en:"What are the consequences if we do NOT solve this problem? What does it cost the organisation?"},
+    {nl:"Hoe wordt dit nu opgelost (workarounds)? Wat werkt er niet aan die aanpak?",en:"How is this currently solved (workarounds)? What doesn't work about that approach?"},
+  ]},
+  { id:"goal", label:{nl:"Het Doel",en:"The Goal"}, questions:[
+    {nl:"Wat wil je concreet bereiken? Hoe ziet succes eruit over 6 maanden?",en:"What do you concretely want to achieve? What does success look like in 6 months?"},
+    {nl:"Welk overkoepelend bedrijfsdoel draagt dit bij? Is dit strategisch geprioriteerd?",en:"Which overarching business objective does this contribute to? Is this strategically prioritised?"},
+    {nl:"Hoe meet je of dit initiatief geslaagd is? Welke KPIs of metrics gebruik je?",en:"How do you measure whether this initiative is successful? Which KPIs or metrics do you use?"},
+  ]},
+  { id:"users", label:{nl:"Gebruikers",en:"Users"}, questions:[
+    {nl:"Wie zijn de primaire gebruikers van de oplossing? Beschrijf hun rol en context.",en:"Who are the primary users of the solution? Describe their role and context."},
+    {nl:"Zijn er secundaire gebruikers of stakeholders die indirect baat hebben?",en:"Are there secondary users or stakeholders who benefit indirectly?"},
+    {nl:"Wie heeft er beslissingsbevoegdheid over dit initiatief? Wie is de eigenaar?",en:"Who has decision-making authority over this initiative? Who is the owner?"},
+    {nl:"Zijn er partijen die weerstand kunnen bieden? Waarom?",en:"Are there parties who might resist? Why?"},
+  ]},
+  { id:"scope", label:{nl:"Scope",en:"Scope"}, questions:[
+    {nl:"Wat valt absoluut binnen scope? Noem de 3 meest essentiële onderdelen.",en:"What is absolutely within scope? Name the 3 most essential components."},
+    {nl:"Wat valt expliciet BUITEN scope voor deze versie? Waarom?",en:"What is explicitly OUT of scope for this version? Why?"},
+    {nl:"Zijn er technische, juridische of organisatorische beperkingen waar we rekening mee moeten houden?",en:"Are there technical, legal or organisational constraints we need to consider?"},
+    {nl:"Welke integraties met bestaande systemen zijn nodig?",en:"Which integrations with existing systems are required?"},
+  ]},
+  { id:"privacy", label:{nl:"AVG & Privacy",en:"GDPR"}, questions:[
+    {nl:"Worden er persoonsgegevens verwerkt? Zo ja, welke categorieën?",en:"Are personal data being processed? If so, which categories?"},
+    {nl:"Is er al een DPIA uitgevoerd of vereist?",en:"Has a DPIA been conducted or is it required?"},
+    {nl:"Wie is de verwerkingsverantwoordelijke en is de privacyofficer betrokken?",en:"Who is the data controller and is the privacy officer involved?"},
+  ]},
+  { id:"open", label:{nl:"Open Vragen",en:"Open Questions"}, questions:[
+    {nl:"Welke informatie mis je nog om een goede beslissing te nemen?",en:"What information are you still missing to make a good decision?"},
+    {nl:"Zijn er aannames die je maakt die nog gevalideerd moeten worden?",en:"Are there assumptions you're making that still need to be validated?"},
+    {nl:"Wie moet je nog spreken of raadplegen voor je dit kunt starten?",en:"Who do you still need to speak to or consult before you can start this?"},
+  ]},
+];
+
+const SYSTEM_PROMPT = (lang) => lang === "nl"
+  ? `Je bent een ervaren product manager en business analist die een business owner interviewt om een feature beschrijving op te stellen.
+Jouw taak:
+- Stel verdiepende vervolgvragen gebaseerd op het antwoord van de gebruiker
+- Vraag door naar het WAAROM achter antwoorden
+- Identificeer tegenstrijdigheden of vaagheden en benoem die vriendelijk
+- Wees concreet en direct, maar empathisch
+- Houd je antwoord beknopt (max 3 zinnen + vervolgvraag)
+- Sluit altijd af met één concrete vervolgvraag
+- Schrijf in het Nederlands`
+  : `You are an experienced product manager and business analyst interviewing a business owner to create a feature description.
+Your task:
+- Ask deepening follow-up questions based on the user's answer
+- Probe for the WHY behind answers
+- Identify contradictions or vagueness and mention them kindly
+- Be concrete and direct, but empathetic
+- Keep your response concise (max 3 sentences + follow-up question)
+- Always end with one concrete follow-up question
+- Write in English`;
+
+function App() {
+  const [fbReady, setFbReady] = useState(!!window._fbReady);
+  const [user, setUser] = useState(null);
+  const [lang, setLang] = useState("nl");
+  const [view, setView] = useState("dashboard");
+  const [sessions, setSessions] = useState([]);
+  const [activeSession, setActiveSession] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [document_, setDocument] = useState(null);
+  const [editingDoc, setEditingDoc] = useState(false);
+  const [docDraft, setDocDraft] = useState(null);
+  const [newSessionTitle, setNewSessionTitle] = useState("");
+  const [showNewSession, setShowNewSession] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const messagesEndRef = useRef(null);
+  const t = (nl, en) => lang === "nl" ? nl : en;
+
+  useEffect(() => {
+    if (fbReady) return;
+    const handler = () => setFbReady(true);
+    window.addEventListener("fb-ready", handler);
+    return () => window.removeEventListener("fb-ready", handler);
+  }, [fbReady]);
+
+  useEffect(() => {
+    if (!fbReady) return;
+    const { onAuthStateChanged } = window._fbFns;
+    return onAuthStateChanged(window._fbAuth, u => setUser(u));
+  }, [fbReady]);
+
+  useEffect(() => {
+    if (!user || !fbReady) return;
+    const { collection, query, orderBy, onSnapshot } = window._fbFns;
+    const q = query(collection(window._fbDb, "pd_sessions"), orderBy("createdAt", "desc"));
+    return onSnapshot(q, snap => {
+      setSessions(snap.docs
+        .filter(d => d.data().members?.includes(user.email) || d.data().ownerId === user.uid)
+        .map(d => ({ id: d.id, ...d.data() })));
+    });
+  }, [user, fbReady]);
+
+  useEffect(() => {
+    if (!activeSession || !fbReady) return;
+    const { collection, query, orderBy, onSnapshot } = window._fbFns;
+    const q = query(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), orderBy("createdAt", "asc"));
+    return onSnapshot(q, snap => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+  }, [activeSession, fbReady]);
+
+  useEffect(() => {
+    if (!activeSession || !fbReady) return;
+    const { doc, onSnapshot } = window._fbFns;
+    return onSnapshot(doc(window._fbDb, "pd_documents", activeSession.id), snap => {
+      if (snap.exists()) setDocument({ id: snap.id, ...snap.data() });
+      else setDocument(null);
+    });
+  }, [activeSession, fbReady]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const login = async () => {
+    const { signInWithPopup } = window._fbFns;
+    window._fbGoogleProvider.setCustomParameters({ prompt: "select_account" });
+    await signInWithPopup(window._fbAuth, window._fbGoogleProvider);
+  };
+
+  const createSession = async () => {
+    if (!newSessionTitle.trim()) return;
+    const { collection, addDoc, serverTimestamp, doc: fbDoc, setDoc } = window._fbFns;
+    const ref = await addDoc(collection(window._fbDb, "pd_sessions"), {
+      title: newSessionTitle, ownerId: user.uid, ownerEmail: user.email,
+      ownerName: user.displayName, members: [user.email], lang,
+      stageIndex: 0, questionIndex: 0, createdAt: serverTimestamp(), status: "active"
+    });
+    const session = { id: ref.id, title: newSessionTitle, ownerId: user.uid, ownerEmail: user.email, members: [user.email], lang, stageIndex: 0, questionIndex: 0 };
+    setActiveSession(session);
+    setStageIndex(0); setQuestionIndex(0);
+    setNewSessionTitle(""); setShowNewSession(false);
+    const firstQ = INTERVIEW_STAGES[0].questions[0][lang];
+    await addDoc(collection(window._fbDb, "pd_sessions", ref.id, "messages"), {
+      role: "assistant", content: firstQ, createdAt: serverTimestamp()
+    });
+    setView("session");
+  };
+
+  const openSession = (s) => {
+    setActiveSession(s);
+    setStageIndex(s.stageIndex || 0);
+    setQuestionIndex(s.questionIndex || 0);
+    setView("session");
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput(""); setLoading(true);
+    const { collection, addDoc, serverTimestamp, doc: fbDoc, updateDoc } = window._fbFns;
+    await addDoc(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), {
+      role: "user", content: userMsg, createdAt: serverTimestamp()
+    });
+    const stage = INTERVIEW_STAGES[stageIndex];
+    const isLastQ = questionIndex >= stage.questions.length - 1;
+    const isLastStage = stageIndex >= INTERVIEW_STAGES.length - 1;
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    history.push({ role: "user", content: userMsg });
+    const systemContext = `${SYSTEM_PROMPT(lang)}\n\nHuidige fase: ${stage.label[lang]}\nHuidige vraag was: ${stage.questions[questionIndex][lang]}\n\n${isLastQ && !isLastStage ? `Na je reactie, introduceer de volgende fase: "${INTERVIEW_STAGES[stageIndex+1].label[lang]}" en stel de eerste vraag.` : isLastStage && isLastQ ? "Dit was de laatste vraag. Geef een afsluitende samenvatting en zeg dat het document nu gegenereerd kan worden via de knop bovenaan." : "Stel een verdiepende vervolgvraag OF beweeg naar de volgende vraag als het antwoord volledig is."}`;
+    try {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system:systemContext, messages:history })
+      });
+      const data = await resp.json();
+      const aiText = data.content?.[0]?.text || "...";
+      await addDoc(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), {
+        role:"assistant", content:aiText, createdAt:serverTimestamp()
+      });
+      let newStage = stageIndex, newQ = questionIndex;
+      if (isLastQ && !isLastStage) { newStage = stageIndex+1; newQ = 0; }
+      else if (!isLastQ) { newQ = questionIndex+1; }
+      setStageIndex(newStage); setQuestionIndex(newQ);
+      await updateDoc(fbDoc(window._fbDb, "pd_sessions", activeSession.id), { stageIndex:newStage, questionIndex:newQ });
+    } catch(e) { console.error(e); }
+    setLoading(false);
+  };
+
+  const generateDocument = async () => {
+    setLoading(true);
+    const { doc: fbDoc, setDoc, serverTimestamp } = window._fbFns;
+    const convo = messages.map(m => `${m.role==="user"?"Business Owner":"Analist"}: ${m.content}`).join("\n\n");
+    const prompt = `Op basis van dit interview, genereer een feature beschrijving werkdocument in JSON met deze exacte structuur:
+{"title":"...","waardehypothese":"...","strategischeRelevantie":"...","voorWie":[{"rol":"...","beschrijving":"..."}],"scope":["..."],"buitenScope":["..."],"acceptatiecriteria":["..."],"avg":{"persoonsgegevens":"...","dpia":"...","verwerkingsverantwoordelijke":"..."},"openVragen":[{"vraag":"...","aanWie":"...","eigenaar":"..."}],"acties":[{"actie":"...","verantwoordelijke":"...","eigenaar":"..."}]}
+Reageer ALLEEN met de JSON, geen uitleg of markdown.
+Interview:\n${convo}`;
+    try {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+      });
+      const data = await resp.json();
+      const raw = data.content?.[0]?.text?.replace(/```json|```/g,"").trim();
+      const parsed = JSON.parse(raw);
+      await setDoc(fbDoc(window._fbDb, "pd_documents", activeSession.id), {
+        ...parsed, sessionId:activeSession.id, updatedAt:serverTimestamp()
+      });
+      setView("document");
+    } catch(e) { console.error(e); alert("Genereren mislukt, probeer opnieuw."); }
+    setLoading(false);
+  };
+
+  const saveDocument = async () => {
+    const { doc: fbDoc, setDoc, serverTimestamp } = window._fbFns;
+    await setDoc(fbDoc(window._fbDb, "pd_documents", activeSession.id), {
+      ...docDraft, sessionId:activeSession.id, updatedAt:serverTimestamp()
+    });
+    setEditingDoc(false);
+  };
+
+  const inviteStakeholder = async () => {
+    if (!inviteEmail.trim() || !activeSession) return;
+    const { doc: fbDoc, updateDoc } = window._fbFns;
+    const newMembers = [...(activeSession.members||[]), inviteEmail.trim()];
+    await updateDoc(fbDoc(window._fbDb, "pd_sessions", activeSession.id), { members: newMembers });
+    setActiveSession({...activeSession, members: newMembers});
+    setInviteEmail("");
+    alert(`${inviteEmail} ${t("uitgenodigd!","invited!")}`);
+  };
+
+  if (!fbReady) return <div className="login-page"><div className="login-card"><div className="login-icon">⏳</div><p style={{color:"#666"}}>Firebase laden...</p></div></div>;
+
+  if (!user) return (
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-icon">🎯</div>
+        <h1>Problem Discovery</h1>
+        <p>{t("Breng samen met je business owner het probleem scherp in beeld. Van interview tot werkdocument.","Sharpen the problem definition together with your business owner. From interview to working document.")}</p>
+        <button className="google-btn" onClick={login}>
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+          {t("Inloggen met Google","Sign in with Google")}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="app">
+      <nav className="nav">
+        <div className="nav-brand">🎯 Problem Discovery</div>
+        <div className="nav-right">
+          <div className="lang-toggle">
+            <button className={`lang-btn ${lang==="nl"?"active":""}`} onClick={()=>setLang("nl")}>NL</button>
+            <button className={`lang-btn ${lang==="en"?"active":""}`} onClick={()=>setLang("en")}>EN</button>
+          </div>
+          {view!=="dashboard" && <button className="btn btn-ghost btn-sm" onClick={()=>setView("dashboard")}>← {t("Dashboard","Dashboard")}</button>}
+          {view==="session" && document_ && <button className="btn btn-primary btn-sm" onClick={()=>setView("document")}>📄 {t("Document","Document")}</button>}
+          {view==="session" && <button className="btn btn-ghost btn-sm" onClick={generateDocument} disabled={loading}>{loading?"⏳":"✨"} {t("Genereer document","Generate document")}</button>}
+          <div className="user-chip">
+            {user.photoURL && <img src={user.photoURL} className="avatar" alt="" />}
+            <span>{user.displayName?.split(" ")[0]}</span>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={()=>window._fbFns.signOut(window._fbAuth)}>{t("Uitloggen","Sign out")}</button>
+        </div>
+      </nav>
+
+      {view==="dashboard" && (
+        <div className="dashboard">
+          <div className="dashboard-header">
+            <h2>{t("Mijn sessies","My sessions")}</h2>
+            <button className="btn btn-primary" onClick={()=>setShowNewSession(!showNewSession)}>+ {t("Nieuwe sessie","New session")}</button>
+          </div>
+          {showNewSession && (
+            <div className="new-session-form">
+              <label style={{fontSize:".8rem",color:"#888",display:"block",marginBottom:".4rem"}}>{t("Naam van het initiatief / feature","Name of the initiative / feature")}</label>
+              <div className="input-row">
+                <input className="input" placeholder={t("bv. Klantportaal self-service","e.g. Customer portal self-service")} value={newSessionTitle} onChange={e=>setNewSessionTitle(e.target.value)} onKeyDown={e=>e.key==="Enter"&&createSession()} />
+                <button className="btn btn-primary" onClick={createSession}>{t("Start","Start")}</button>
+                <button className="btn btn-ghost" onClick={()=>setShowNewSession(false)}>✕</button>
+              </div>
+            </div>
+          )}
+          <div className="sessions-grid">
+            {sessions.length===0 && !showNewSession && <div className="empty-state"><div className="icon">💡</div><p>{t("Nog geen sessies. Start een nieuwe sessie om een probleem te verkennen.","No sessions yet. Start a new session to explore a problem.")}</p></div>}
+            {sessions.map(s=>(
+              <div key={s.id} className="session-card" onClick={()=>openSession(s)}>
+                <div>
+                  <div className="session-title">{s.title}</div>
+                  <div className="session-meta">{s.ownerName} · {s.members?.length||1} {t("deelnemers","participants")} · fase {(s.stageIndex||0)+1}/{INTERVIEW_STAGES.length}</div>
+                </div>
+                <span className="session-badge">{INTERVIEW_STAGES[s.stageIndex||0]?.label[lang]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {view==="session" && activeSession && (
+        <div className="session-layout">
+          <div className="session-topbar">
+            <div className="session-title-bar">{activeSession.title}</div>
+            <div className="stage-pills">
+              {INTERVIEW_STAGES.map((s,i)=>(
+                <div key={s.id} className={`stage-pill ${i<stageIndex?"done":i===stageIndex?"active":""}`}>{s.label[lang]}</div>
+              ))}
+            </div>
+          </div>
+          <div className="chat-area">
+            {messages.map(m=>(
+              <div key={m.id} className={`msg ${m.role}`}>
+                <div className="msg-avatar">{m.role==="assistant"?"🤖":"👤"}</div>
+                <div className="msg-bubble">{m.content}</div>
+              </div>
+            ))}
+            {loading && <div className="msg assistant"><div className="msg-avatar">🤖</div><div className="msg-bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
+            <div ref={messagesEndRef}/>
+          </div>
+          <div className="invite-panel">
+            <label>{t("Stakeholder uitnodigen:","Invite stakeholder:")}</label>
+            <input className="input" style={{flex:1,padding:".4rem .75rem"}} placeholder={t("email@bedrijf.nl","email@company.com")} value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} />
+            <button className="btn btn-ghost btn-sm" onClick={inviteStakeholder}>{t("Uitnodigen","Invite")}</button>
+            <span style={{fontSize:".75rem",color:"#444"}}>{activeSession.members?.length||1} {t("deelnemers","participants")}</span>
+          </div>
+          <div className="chat-input-area">
+            <textarea className="chat-textarea" placeholder={t("Typ je antwoord... (Enter = versturen, Shift+Enter = nieuwe regel)","Type your answer... (Enter = send, Shift+Enter = new line)")} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}}} rows={1}/>
+            <button className="send-btn" onClick={sendMessage} disabled={loading||!input.trim()}>↑</button>
+          </div>
+        </div>
+      )}
+
+      {view==="document" && document_ && (
+        <div className="doc-view">
+          <div className="doc-header">
+            <div className="doc-title">{document_.title||activeSession?.title}</div>
+            <div style={{display:"flex",gap:".5rem"}}>
+              {editingDoc
+                ? <><button className="btn btn-primary btn-sm" onClick={saveDocument}>💾 {t("Opslaan","Save")}</button><button className="btn btn-ghost btn-sm" onClick={()=>setEditingDoc(false)}>✕</button></>
+                : <button className="btn btn-ghost btn-sm" onClick={()=>{setDocDraft({...document_});setEditingDoc(true);}}>✏️ {t("Bewerken","Edit")}</button>
+              }
+            </div>
+          </div>
+
+          <div className="doc-section">
+            <div className="doc-section-title">💡 {t("Waardehypothese","Value Hypothesis")}</div>
+            {editingDoc?<textarea className="textarea-edit" value={docDraft.waardehypothese} onChange={e=>setDocDraft({...docDraft,waardehypothese:e.target.value})}/>:<p>{document_.waardehypothese}</p>}
+          </div>
+          <div className="doc-section">
+            <div className="doc-section-title">🎯 {t("Strategische Relevantie","Strategic Relevance")}</div>
+            {editingDoc?<textarea className="textarea-edit" value={docDraft.strategischeRelevantie} onChange={e=>setDocDraft({...docDraft,strategischeRelevantie:e.target.value})}/>:<p>{document_.strategischeRelevantie}</p>}
+          </div>
+          <div className="doc-section">
+            <div className="doc-section-title">👥 {t("Voor Wie","For Whom")}</div>
+            {(editingDoc?docDraft.voorWie:document_.voorWie)?.map((r,i)=>(
+              <div key={i} className="role-card">
+                {editingDoc
+                  ? <><input className="input-edit" style={{marginBottom:".4rem"}} placeholder="Rol" value={docDraft.voorWie[i].rol} onChange={e=>{const v=[...docDraft.voorWie];v[i]={...v[i],rol:e.target.value};setDocDraft({...docDraft,voorWie:v})}}/><input className="input-edit" placeholder="Beschrijving" value={docDraft.voorWie[i].beschrijving} onChange={e=>{const v=[...docDraft.voorWie];v[i]={...v[i],beschrijving:e.target.value};setDocDraft({...docDraft,voorWie:v})}}/></>
+                  : <><div className="role-name">{r.rol}</div><div className="role-desc">{r.beschrijving}</div></>}
+              </div>
+            ))}
+          </div>
+          <div className="doc-section scope-grid">
+            <div>
+              <div className="doc-section-title">✅ {t("Binnen Scope","In Scope")}</div>
+              <ul className="doc-list">{(editingDoc?docDraft.scope:document_.scope)?.map((s,i)=><li key={i}>{editingDoc?<input className="input-edit" value={docDraft.scope[i]} onChange={e=>{const v=[...docDraft.scope];v[i]=e.target.value;setDocDraft({...docDraft,scope:v})}}/>:s}</li>)}</ul>
+            </div>
+            <div>
+              <div className="doc-section-title">🚫 {t("Buiten Scope","Out of Scope")}</div>
+              <ul className="doc-list">{(editingDoc?docDraft.buitenScope:document_.buitenScope)?.map((s,i)=><li key={i}>{editingDoc?<input className="input-edit" value={docDraft.buitenScope[i]} onChange={e=>{const v=[...docDraft.buitenScope];v[i]=e.target.value;setDocDraft({...docDraft,buitenScope:v})}}/>:s}</li>)}</ul>
+            </div>
+          </div>
+          <div className="doc-section">
+            <div className="doc-section-title">☑️ {t("Acceptatiecriteria","Acceptance Criteria")}</div>
+            <ul className="doc-list">{(editingDoc?docDraft.acceptatiecriteria:document_.acceptatiecriteria)?.map((s,i)=><li key={i}>{editingDoc?<input className="input-edit" value={docDraft.acceptatiecriteria[i]} onChange={e=>{const v=[...docDraft.acceptatiecriteria];v[i]=e.target.value;setDocDraft({...docDraft,acceptatiecriteria:v})}}/>:s}</li>)}</ul>
+          </div>
+          <div className="doc-section">
+            <div className="doc-section-title">🔒 AVG / GDPR</div>
+            <div className="avg-grid">
+              {["persoonsgegevens","dpia","verwerkingsverantwoordelijke"].map(key=>(
+                <div className="avg-item" key={key}>
+                  <label>{key==="persoonsgegevens"?t("Persoonsgegevens","Personal data"):key==="dpia"?"DPIA":t("Verwerkingsverantwoordelijke","Data controller")}</label>
+                  {editingDoc?<input className="input-edit" value={docDraft.avg?.[key]||""} onChange={e=>setDocDraft({...docDraft,avg:{...docDraft.avg,[key]:e.target.value}})}/>:<p>{document_.avg?.[key]}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="doc-section">
+            <div className="doc-section-title">❓ {t("Openstaande Vragen","Open Questions")}</div>
+            <table className="oq-table">
+              <thead><tr><th>{t("Vraag","Question")}</th><th>{t("Aan wie","To whom")}</th><th>{t("Eigenaar","Owner")}</th></tr></thead>
+              <tbody>
+                {(editingDoc?docDraft.openVragen:document_.openVragen)?.map((q,i)=>(
+                  <tr key={i}>
+                    {editingDoc
+                      ? <><td><input className="input-edit" value={docDraft.openVragen[i].vraag} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],vraag:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td><td><input className="input-edit" value={docDraft.openVragen[i].aanWie} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],aanWie:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td><td><input className="input-edit" value={docDraft.openVragen[i].eigenaar} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],eigenaar:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td></>
+                      : <><td>{q.vraag}</td><td>{q.aanWie}</td><td><span className="owner-chip">{q.eigenaar}</span></td></>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {editingDoc && <button className="add-row-btn" onClick={()=>setDocDraft({...docDraft,openVragen:[...(docDraft.openVragen||[]),{vraag:"",aanWie:"",eigenaar:""}]})}>+ {t("Vraag toevoegen","Add question")}</button>}
+          </div>
+          <div className="doc-section">
+            <div className="doc-section-title">⚡ {t("Acties","Actions")}</div>
+            <table className="oq-table">
+              <thead><tr><th>{t("Actie","Action")}</th><th>{t("Verantwoordelijke","Responsible")}</th><th>{t("Eigenaar","Owner")}</th></tr></thead>
+              <tbody>
+                {(editingDoc?docDraft.acties:document_.acties)?.map((a,i)=>(
+                  <tr key={i}>
+                    {editingDoc
+                      ? <><td><input className="input-edit" value={docDraft.acties[i].actie} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],actie:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td><td><input className="input-edit" value={docDraft.acties[i].verantwoordelijke} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],verantwoordelijke:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td><td><input className="input-edit" value={docDraft.acties[i].eigenaar} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],eigenaar:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td></>
+                      : <><td>{a.actie}</td><td>{a.verantwoordelijke}</td><td><span className="owner-chip">{a.eigenaar}</span></td></>}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {editingDoc && <button className="add-row-btn" onClick={()=>setDocDraft({...docDraft,acties:[...(docDraft.acties||[]),{actie:"",verantwoordelijke:"",eigenaar:""}]})}>+ {t("Actie toevoegen","Add action")}</button>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
+</body>
+</html>
