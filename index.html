@@ -274,20 +274,25 @@ function App() {
 
   const createSession = async () => {
     if (!newSessionTitle.trim()) return;
-    const { collection, addDoc, serverTimestamp, doc: fbDoc, setDoc } = window._fbFns;
+    const { collection, addDoc, serverTimestamp } = window._fbFns;
+    const sessionTitle = newSessionTitle;
     const ref = await addDoc(collection(window._fbDb, "pd_sessions"), {
-      title: newSessionTitle, ownerId: user.uid, ownerEmail: user.email,
+      title: sessionTitle, ownerId: user.uid, ownerEmail: user.email,
       ownerName: user.displayName, members: [user.email], lang,
       stageIndex: 0, questionIndex: 0, createdAt: serverTimestamp(), status: "active"
     });
-    const session = { id: ref.id, title: newSessionTitle, ownerId: user.uid, ownerEmail: user.email, members: [user.email], lang, stageIndex: 0, questionIndex: 0 };
+    const session = { id: ref.id, title: sessionTitle, ownerId: user.uid, ownerEmail: user.email, members: [user.email], lang, stageIndex: 0, questionIndex: 0 };
     setActiveSession(session);
     setStageIndex(0); setQuestionIndex(0);
     setNewSessionTitle(""); setShowNewSession(false);
     const firstQ = INTERVIEW_STAGES[0].questions[0][lang];
-    await addDoc(collection(window._fbDb, "pd_sessions", ref.id, "messages"), {
-      role: "assistant", content: firstQ, createdAt: serverTimestamp()
+    const intro = (lang === "nl")
+      ? `Welkom! Ik ga je helpen om "${sessionTitle}" goed in kaart te brengen.\n\nWe doorlopen samen 7 fases: Context, Probleem, Doel, Gebruikers, Scope, AVG en Open Vragen. Aan het einde genereer ik automatisch een werkdocument.\n\nLaten we beginnen met de eerste vraag:\n\n${firstQ}`
+      : `Welcome! I'll help you map out "${sessionTitle}" clearly.\n\nWe'll go through 7 phases: Context, Problem, Goal, Users, Scope, GDPR and Open Questions. At the end I'll generate a working document.\n\nLet's start with the first question:\n\n${firstQ}`;
+    const msgRef = await addDoc(collection(window._fbDb, "pd_sessions", ref.id, "messages"), {
+      role: "assistant", content: intro, createdAt: serverTimestamp()
     });
+    setMessages([{ id: msgRef.id, role: "assistant", content: intro }]);
     setView("session");
   };
 
