@@ -10,7 +10,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, setDoc, deleteDoc, getDocs, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyApaudujzFMRcItshMqTWCC4qqe-qMfg88",
@@ -28,7 +28,7 @@
     window._fbFns = {
       signInWithPopup, signOut, onAuthStateChanged,
       collection, addDoc, updateDoc, doc, onSnapshot,
-      serverTimestamp, query, orderBy, where, setDoc, deleteDoc, getDocs
+      serverTimestamp, query, orderBy, where, setDoc, deleteDoc, getDocs, increment
     };
     window._fbReady = true;
     window.dispatchEvent(new Event("fb-ready"));
@@ -82,21 +82,22 @@
     .input{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:8px;padding:.6rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;width:100%;transition:border .2s}
     .input:focus{outline:none;border-color:#6366f1}
     .input-row{display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
-    .session-layout{display:flex;flex-direction:column}
+    .session-layout{display:flex;flex-direction:column;min-width:0}
     .session-topbar{display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;background:#1b1b28;border-bottom:1px solid #272738;flex-shrink:0;overflow-x:auto}
     .session-title-bar{font-family:'Syne',sans-serif;font-weight:600;font-size:.95rem;white-space:nowrap}
+    .cost-badge{font-size:.72rem;color:#9a9aa8;white-space:nowrap;flex-shrink:0;font-family:monospace}
     .stage-pills{display:flex;gap:.4rem;overflow-x:auto;flex:1}
     .stage-pill{padding:.25rem .75rem;border-radius:20px;font-size:.72rem;font-weight:500;white-space:nowrap;border:1px solid #3a3a4e;color:#6c6c7a;background:transparent}
     .stage-pill.done{border-color:#4a4a68;color:#6366f1;background:rgba(99,102,241,.1)}
     .stage-pill.active{border-color:#6366f1;color:#fff;background:#6366f1}
-    .chat-area{padding:1.25rem 1.5rem 2rem;display:flex;flex-direction:column;gap:.9rem}
-    .msg{display:flex;max-width:100%}
+    .chat-area{padding:1.25rem 1.5rem 2rem;display:flex;flex-direction:column;gap:.9rem;min-width:0;box-sizing:border-box}
+    .msg{display:flex;max-width:100%;min-width:0}
     .msg.assistant{justify-content:flex-start}
     .msg.user{justify-content:flex-end}
-    .msg-bubble{padding:.9rem 1.2rem;border-radius:20px;font-size:.92rem;line-height:1.6;max-width:600px;white-space:pre-wrap}
+    .msg-bubble{padding:.9rem 1.2rem;border-radius:20px;font-size:.92rem;line-height:1.6;max-width:600px;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;box-sizing:border-box}
     .msg.assistant .msg-bubble{background:#f7f7fa;color:#1c1c26;border-radius:6px 20px 20px 20px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
     .msg.user .msg-bubble{background:#e7e3fd;color:#241a3d;border-radius:20px 6px 20px 20px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
-    .inline-input-row{display:flex;gap:.6rem;align-items:flex-end;max-width:600px;align-self:flex-start;width:100%;margin-top:-.25rem}
+    .inline-input-row{display:flex;gap:.6rem;align-items:flex-end;max-width:600px;align-self:flex-start;width:100%;margin-top:-.25rem;min-width:0;box-sizing:border-box}
     .typing{display:flex;gap:4px;padding:.3rem .1rem}
     .dot{width:6px;height:6px;border-radius:50%;background:#9a9aa8;animation:bounce 1.2s infinite}
     .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
@@ -104,7 +105,7 @@
     .invite-panel{background:#1a1a28;border-top:1px solid #272738;padding:.75rem 1.5rem;display:flex;gap:.75rem;align-items:center;flex-shrink:0;flex-wrap:wrap}
     .invite-panel label{font-size:.78rem;color:#7a7a88;white-space:nowrap}
     .chat-input-area{padding:1rem 1.5rem;background:#1b1b28;border-top:1px solid #272738;display:flex;gap:.75rem;align-items:flex-end;flex-shrink:0}
-    .chat-textarea{flex:1;background:#fff;border:1px solid #d8d8e4;color:#1c1c26;border-radius:16px;padding:.75rem 1.1rem;font-family:'DM Sans',sans-serif;font-size:.92rem;resize:none;min-height:46px;max-height:140px;transition:border .2s}
+    .chat-textarea{flex:1;min-width:0;width:0;background:#fff;border:1px solid #d8d8e4;color:#1c1c26;border-radius:16px;padding:.75rem 1.1rem;font-family:'DM Sans',sans-serif;font-size:.92rem;resize:none;min-height:46px;max-height:140px;transition:border .2s;box-sizing:border-box}
     .chat-textarea:focus{outline:none;border-color:#6366f1}
     .chat-textarea::placeholder{color:#9a9aa8}
     .send-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;width:44px;height:44px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .2s;flex-shrink:0}
@@ -149,7 +150,17 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-17 · 2026-10-23 19:35";
+const APP_BUILD = "fix-18 · 2026-10-23 20:05";
+
+// Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
+const MODEL_PRICING = {
+  "claude-haiku-5-5": { in: 0.10, out: 0.50 },
+  "claude-sonnet-5-5": { in: 2.00, out: 10.00 },
+};
+function calcCost(modelId, inputTokens, outputTokens) {
+  const p = MODEL_PRICING[modelId] || MODEL_PRICING["claude-haiku-5-5"];
+  return (inputTokens / 1e6) * p.in + (outputTokens / 1e6) * p.out;
+}
 
 // Haalt het eerste tekstblok uit een Anthropic-API-respons. Claude-modellen
 // kunnen content-blokken van verschillende types teruggeven (bv. "thinking"
@@ -392,7 +403,7 @@ function App() {
     if (!input.trim() || loading) return;
     const userMsg = input.trim();
     setInput(""); setLoading(true);
-    const { collection, addDoc, serverTimestamp, doc: fbDoc, updateDoc } = window._fbFns;
+    const { collection, addDoc, serverTimestamp, doc: fbDoc, updateDoc, increment } = window._fbFns;
     await addDoc(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), {
       role: "user", content: userMsg, createdAt: serverTimestamp()
     });
@@ -422,7 +433,13 @@ function App() {
       if (isLastQ && !isLastStage) { newStage = stageIndex+1; newQ = 0; }
       else if (!isLastQ) { newQ = questionIndex+1; }
       setStageIndex(newStage); setQuestionIndex(newQ);
-      await updateDoc(fbDoc(window._fbDb, "pd_sessions", activeSession.id), { stageIndex:newStage, questionIndex:newQ });
+      const inTok = data.usage?.input_tokens || 0;
+      const outTok = data.usage?.output_tokens || 0;
+      const cost = calcCost(model, inTok, outTok);
+      await updateDoc(fbDoc(window._fbDb, "pd_sessions", activeSession.id), {
+        stageIndex:newStage, questionIndex:newQ,
+        costUsd: increment(cost), inputTokens: increment(inTok), outputTokens: increment(outTok)
+      });
     } catch(e) {
       console.error(e);
       alert((lang==="nl" ? "Er ging iets mis: " : "Something went wrong: ") + e.message);
@@ -432,7 +449,7 @@ function App() {
 
   const generateDocument = async () => {
     setLoading(true);
-    const { doc: fbDoc, setDoc, serverTimestamp } = window._fbFns;
+    const { doc: fbDoc, setDoc, updateDoc, serverTimestamp, increment } = window._fbFns;
     const convo = messages.map(m => `${m.role==="user"?"Business Owner":"Analist"}: ${m.content}`).join("\n\n");
     const prompt = `Op basis van dit interview, genereer een feature beschrijving werkdocument in JSON met deze exacte structuur:
 {"title":"...","waardehypothese":"...","strategischeRelevantie":"...","voorWie":[{"rol":"...","beschrijving":"..."}],"scope":["..."],"buitenScope":["..."],"acceptatiecriteria":["..."],"avg":{"persoonsgegevens":"...","dpia":"...","verwerkingsverantwoordelijke":"..."},"openVragen":[{"vraag":"...","aanWie":"...","eigenaar":"..."}],"acties":[{"actie":"...","verantwoordelijke":"...","eigenaar":"..."}]}
@@ -455,6 +472,12 @@ Interview:\n${convo}`;
       const parsed = JSON.parse(raw);
       await setDoc(fbDoc(window._fbDb, "pd_documents", activeSession.id), {
         ...parsed, sessionId:activeSession.id, updatedAt:serverTimestamp()
+      });
+      const inTok = data.usage?.input_tokens || 0;
+      const outTok = data.usage?.output_tokens || 0;
+      const cost = calcCost(model, inTok, outTok);
+      await updateDoc(fbDoc(window._fbDb, "pd_sessions", activeSession.id), {
+        costUsd: increment(cost), inputTokens: increment(inTok), outputTokens: increment(outTok)
       });
       setView("document");
     } catch(e) { console.error(e); alert("Genereren mislukt, probeer opnieuw."); }
@@ -566,7 +589,7 @@ Tot zo!`
               <div key={s.id} className="session-card" onClick={()=>openSession(s)}>
                 <div>
                   <div className="session-title">{s.title}</div>
-                  <div className="session-meta">{s.ownerName} · {s.members?.length||1} {t("deelnemers","participants")} · fase {(s.stageIndex||0)+1}/{INTERVIEW_STAGES.length}</div>
+                  <div className="session-meta">{s.ownerName} · {s.members?.length||1} {t("deelnemers","participants")} · fase {(s.stageIndex||0)+1}/{INTERVIEW_STAGES.length} · ${(s.costUsd||0).toFixed(4)}</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:".6rem"}}>
                   <span className="session-badge">{INTERVIEW_STAGES[s.stageIndex||0]?.label[lang]}</span>
@@ -586,6 +609,9 @@ Tot zo!`
               {INTERVIEW_STAGES.map((s,i)=>(
                 <div key={s.id} className={`stage-pill ${i<stageIndex?"done":i===stageIndex?"active":""}`}>{s.label[lang]}</div>
               ))}
+            </div>
+            <div className="cost-badge" title={t("Geschatte API-kosten van deze sessie","Estimated API cost for this session")}>
+              💰 ${((sessions.find(s=>s.id===activeSession.id)?.costUsd) || 0).toFixed(4)}
             </div>
           </div>
           <div className="chat-area">
