@@ -10,7 +10,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyApaudujzFMRcItshMqTWCC4qqe-qMfg88",
@@ -28,7 +28,7 @@
     window._fbFns = {
       signInWithPopup, signOut, onAuthStateChanged,
       collection, addDoc, updateDoc, doc, onSnapshot,
-      serverTimestamp, query, orderBy, where, setDoc
+      serverTimestamp, query, orderBy, where, setDoc, deleteDoc, getDocs
     };
     window._fbReady = true;
     window.dispatchEvent(new Event("fb-ready"));
@@ -71,6 +71,8 @@
     .sessions-grid{display:grid;gap:1rem}
     .session-card{background:#1e1e2c;border:1px solid #272738;border-radius:12px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
     .session-card:hover{border-color:#6366f1;transform:translateY(-1px);background:#1e1e2c}
+    .session-delete-btn{background:none;border:none;cursor:pointer;font-size:1rem;padding:.35rem;border-radius:6px;opacity:.6;transition:all .15s;line-height:1}
+    .session-delete-btn:hover{opacity:1;background:#3d1f22}
     .session-title{font-family:'Syne',sans-serif;font-weight:600;margin-bottom:.25rem}
     .session-meta{font-size:.78rem;color:#6c6c7a}
     .session-badge{background:#272738;color:#6366f1;font-size:.72rem;padding:.2rem .6rem;border-radius:20px;font-weight:500;white-space:nowrap}
@@ -147,7 +149,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-14 · 2026-10-23 18:40";
+const APP_BUILD = "fix-15 · 2026-10-23 19:00";
 
 // Maakt URL's in een foutmelding klikbaar (bv. de Firestore-index-aanmaaklink
 // die Firebase meegeeft bij een failed-precondition fout).
@@ -354,6 +356,29 @@ function App() {
     setView("session");
   };
 
+  const deleteSession = async (s, e) => {
+    e.stopPropagation();
+    const ok = window.confirm(
+      t(`Sessie "${s.title}" definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+        `Permanently delete session "${s.title}"? This cannot be undone.`)
+    );
+    if (!ok) return;
+    const { collection, doc, deleteDoc, getDocs } = window._fbFns;
+    try {
+      const msgsSnap = await getDocs(collection(window._fbDb, "pd_sessions", s.id, "messages"));
+      await Promise.all(msgsSnap.docs.map(d => deleteDoc(d.ref)));
+      await deleteDoc(doc(window._fbDb, "pd_documents", s.id)).catch(()=>{});
+      await deleteDoc(doc(window._fbDb, "pd_sessions", s.id));
+      if (activeSession?.id === s.id) {
+        setActiveSession(null);
+        setView("dashboard");
+      }
+    } catch (e2) {
+      console.error("deleteSession error:", e2);
+      setFbError(`${t("Sessie verwijderen mislukt","Failed to delete session")}: ${e2.message || e2.code}`);
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
     const userMsg = input.trim();
@@ -527,7 +552,10 @@ Tot zo!`
                   <div className="session-title">{s.title}</div>
                   <div className="session-meta">{s.ownerName} · {s.members?.length||1} {t("deelnemers","participants")} · fase {(s.stageIndex||0)+1}/{INTERVIEW_STAGES.length}</div>
                 </div>
-                <span className="session-badge">{INTERVIEW_STAGES[s.stageIndex||0]?.label[lang]}</span>
+                <div style={{display:"flex",alignItems:"center",gap:".6rem"}}>
+                  <span className="session-badge">{INTERVIEW_STAGES[s.stageIndex||0]?.label[lang]}</span>
+                  <button className="session-delete-btn" onClick={(e)=>deleteSession(s,e)} title={t("Sessie verwijderen","Delete session")}>🗑️</button>
+                </div>
               </div>
             ))}
           </div>
