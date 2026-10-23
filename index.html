@@ -36,96 +36,103 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'DM Sans',sans-serif;background:#0a0a0f;color:#e8e8f0;min-height:100vh}
-    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:4px}
-    .app{display:flex;flex-direction:column;min-height:100vh}
-    .nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(10,10,15,.95);border-bottom:1px solid #1a1a2e;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);flex-wrap:wrap;gap:.5rem}
+    html{overflow-x:hidden}
+    body{font-family:'DM Sans',sans-serif;background:#141420;color:#e8e8f0;min-height:100vh;min-height:100dvh;overflow-x:hidden}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#3a3a4e;border-radius:4px}
+    .app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(10,10,15,.95);border-bottom:1px solid #272738;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);flex-wrap:wrap;gap:.5rem}
     .nav-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .nav-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
     .btn{padding:.5rem 1.2rem;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;transition:all .2s}
     .btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
     .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
-    .btn-ghost{background:transparent;color:#888;border:1px solid #2a2a3a}
+    .btn-ghost{background:transparent;color:#9a9aa8;border:1px solid #3a3a4e}
     .btn-ghost:hover{border-color:#6366f1;color:#a78bfa}
     .btn-sm{padding:.3rem .8rem;font-size:.78rem}
-    .lang-toggle{display:flex;background:#1a1a2e;border-radius:6px;overflow:hidden}
-    .lang-btn{padding:.3rem .7rem;border:none;background:transparent;color:#666;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .lang-toggle{display:flex;background:#272738;border-radius:6px;overflow:hidden}
+    .lang-btn{padding:.3rem .7rem;border:none;background:transparent;color:#7a7a88;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s}
     .lang-btn.active{background:#6366f1;color:#fff}
-    .user-chip{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#888}
+    .model-select{background:#272738;color:#c4c4d4;border:1px solid #3a3a4e;border-radius:6px;padding:.3rem .5rem;font-size:.78rem;font-family:'DM Sans',sans-serif;cursor:pointer}
+    .fb-error-banner{background:#3d1f22;color:#ffb4bb;border-bottom:1px solid #5c2a30;padding:.65rem 1.5rem;font-size:.82rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+    .fb-error-dismiss{background:none;border:none;color:#ffb4bb;cursor:pointer;font-size:.9rem;padding:0 .25rem}
+    .build-badge{position:fixed;bottom:.5rem;right:.6rem;background:rgba(0,0,0,.55);color:#9a9aa8;font-size:.68rem;padding:.25rem .55rem;border-radius:6px;z-index:999;font-family:monospace;pointer-events:none}
+    .user-chip{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#9a9aa8}
     .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
-    .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 30% 50%,#1a1030 0%,#0a0a0f 60%)}
+    .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:radial-gradient(ellipse at 30% 50%,#241a3d 0%,#141420 60%)}
     .login-card{text-align:center;padding:3rem;max-width:420px}
     .login-icon{font-size:3rem;margin-bottom:1.5rem}
     .login-card h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:.5rem;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .login-card p{color:#666;margin-bottom:2rem;line-height:1.6}
-    .google-btn{display:flex;align-items:center;gap:.75rem;background:#fff;color:#333;border:none;padding:.8rem 2rem;border-radius:10px;font-size:.95rem;font-weight:500;cursor:pointer;margin:0 auto;transition:all .2s;font-family:'DM Sans',sans-serif}
+    .login-card p{color:#7a7a88;margin-bottom:2rem;line-height:1.6}
+    .google-btn{display:flex;align-items:center;gap:.75rem;background:#fff;color:#4a4a58;border:none;padding:.8rem 2rem;border-radius:10px;font-size:.95rem;font-weight:500;cursor:pointer;margin:0 auto;transition:all .2s;font-family:'DM Sans',sans-serif}
     .google-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(99,102,241,.3)}
     .dashboard{padding:2rem;max-width:900px;margin:0 auto}
     .dashboard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem}
     .dashboard-header h2{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700}
     .sessions-grid{display:grid;gap:1rem}
-    .session-card{background:#111118;border:1px solid #1a1a2e;border-radius:12px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
-    .session-card:hover{border-color:#6366f1;transform:translateY(-1px);background:#13131f}
+    .session-card{background:#1e1e2c;border:1px solid #272738;border-radius:12px;padding:1.25rem 1.5rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
+    .session-card:hover{border-color:#6366f1;transform:translateY(-1px);background:#1e1e2c}
     .session-title{font-family:'Syne',sans-serif;font-weight:600;margin-bottom:.25rem}
-    .session-meta{font-size:.78rem;color:#555}
-    .session-badge{background:#1a1a2e;color:#6366f1;font-size:.72rem;padding:.2rem .6rem;border-radius:20px;font-weight:500;white-space:nowrap}
-    .empty-state{text-align:center;padding:4rem 2rem;color:#444}
+    .session-meta{font-size:.78rem;color:#6c6c7a}
+    .session-badge{background:#272738;color:#6366f1;font-size:.72rem;padding:.2rem .6rem;border-radius:20px;font-weight:500;white-space:nowrap}
+    .empty-state{text-align:center;padding:4rem 2rem;color:#5c5c6a}
     .empty-state .icon{font-size:2.5rem;margin-bottom:1rem}
-    .new-session-form{background:#111118;border:1px dashed #2a2a3a;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
-    .input{background:#0d0d16;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:8px;padding:.6rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;width:100%;transition:border .2s}
+    .new-session-form{background:#1e1e2c;border:1px dashed #3a3a4e;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+    .input{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:8px;padding:.6rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;width:100%;transition:border .2s}
     .input:focus{outline:none;border-color:#6366f1}
     .input-row{display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
-    .session-layout{display:flex;flex-direction:column;height:calc(100vh - 57px)}
-    .session-topbar{display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;background:#0d0d16;border-bottom:1px solid #1a1a2e;flex-shrink:0;overflow-x:auto}
+    .session-layout{display:flex;flex-direction:column}
+    .session-topbar{display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;background:#1b1b28;border-bottom:1px solid #272738;flex-shrink:0;overflow-x:auto}
     .session-title-bar{font-family:'Syne',sans-serif;font-weight:600;font-size:.95rem;white-space:nowrap}
     .stage-pills{display:flex;gap:.4rem;overflow-x:auto;flex:1}
-    .stage-pill{padding:.25rem .75rem;border-radius:20px;font-size:.72rem;font-weight:500;white-space:nowrap;border:1px solid #2a2a3a;color:#555;background:transparent}
-    .stage-pill.done{border-color:#3a3a5a;color:#6366f1;background:rgba(99,102,241,.1)}
+    .stage-pill{padding:.25rem .75rem;border-radius:20px;font-size:.72rem;font-weight:500;white-space:nowrap;border:1px solid #3a3a4e;color:#6c6c7a;background:transparent}
+    .stage-pill.done{border-color:#4a4a68;color:#6366f1;background:rgba(99,102,241,.1)}
     .stage-pill.active{border-color:#6366f1;color:#fff;background:#6366f1}
-    .chat-area{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
-    .msg{display:flex;gap:.75rem;max-width:720px}
-    .msg.user{flex-direction:row-reverse;align-self:flex-end}
-    .msg-bubble{padding:.85rem 1.1rem;border-radius:14px;font-size:.88rem;line-height:1.6;max-width:540px;white-space:pre-wrap}
-    .msg.assistant .msg-bubble{background:#111118;border:1px solid #1a1a2e;color:#d4d4e8;border-radius:4px 14px 14px 14px}
-    .msg.user .msg-bubble{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:14px 4px 14px 14px}
-    .msg-avatar{width:30px;height:30px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
-    .typing{display:flex;gap:4px;padding:.5rem}
-    .dot{width:6px;height:6px;border-radius:50%;background:#6366f1;animation:bounce 1.2s infinite}
+    .chat-area{padding:1.25rem 1.5rem 2rem;display:flex;flex-direction:column;gap:.9rem}
+    .msg{display:flex;max-width:100%}
+    .msg.assistant{justify-content:flex-start}
+    .msg.user{justify-content:flex-end}
+    .msg-bubble{padding:.9rem 1.2rem;border-radius:20px;font-size:.92rem;line-height:1.6;max-width:600px;white-space:pre-wrap}
+    .msg.assistant .msg-bubble{background:#f7f7fa;color:#1c1c26;border-radius:6px 20px 20px 20px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+    .msg.user .msg-bubble{background:#e7e3fd;color:#241a3d;border-radius:20px 6px 20px 20px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+    .inline-input-row{display:flex;gap:.6rem;align-items:flex-end;max-width:600px;align-self:flex-start;width:100%;margin-top:-.25rem}
+    .typing{display:flex;gap:4px;padding:.3rem .1rem}
+    .dot{width:6px;height:6px;border-radius:50%;background:#9a9aa8;animation:bounce 1.2s infinite}
     .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
     @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
-    .invite-panel{background:#0f0f1a;border-top:1px solid #1a1a2e;padding:.75rem 1.5rem;display:flex;gap:.75rem;align-items:center;flex-shrink:0;flex-wrap:wrap}
-    .invite-panel label{font-size:.78rem;color:#666;white-space:nowrap}
-    .chat-input-area{padding:1rem 1.5rem;background:#0d0d16;border-top:1px solid #1a1a2e;display:flex;gap:.75rem;align-items:flex-end;flex-shrink:0}
-    .chat-textarea{flex:1;background:#111118;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:10px;padding:.75rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;resize:none;min-height:44px;max-height:140px;transition:border .2s}
+    .invite-panel{background:#1a1a28;border-top:1px solid #272738;padding:.75rem 1.5rem;display:flex;gap:.75rem;align-items:center;flex-shrink:0;flex-wrap:wrap}
+    .invite-panel label{font-size:.78rem;color:#7a7a88;white-space:nowrap}
+    .chat-input-area{padding:1rem 1.5rem;background:#1b1b28;border-top:1px solid #272738;display:flex;gap:.75rem;align-items:flex-end;flex-shrink:0}
+    .chat-textarea{flex:1;background:#fff;border:1px solid #d8d8e4;color:#1c1c26;border-radius:16px;padding:.75rem 1.1rem;font-family:'DM Sans',sans-serif;font-size:.92rem;resize:none;min-height:46px;max-height:140px;transition:border .2s}
     .chat-textarea:focus{outline:none;border-color:#6366f1}
+    .chat-textarea::placeholder{color:#9a9aa8}
     .send-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;width:44px;height:44px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .2s;flex-shrink:0}
     .send-btn:hover{opacity:.9}
     .send-btn:disabled{opacity:.4;cursor:not-allowed}
     .doc-view{padding:2rem;max-width:820px;margin:0 auto}
     .doc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
     .doc-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .doc-section{background:#111118;border:1px solid #1a1a2e;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+    .doc-section{background:#1e1e2c;border:1px solid #272738;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
     .doc-section-title{font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6366f1;margin-bottom:.75rem}
     .doc-section p{color:#c4c4d4;line-height:1.7;font-size:.9rem}
     .doc-list{list-style:none;display:flex;flex-direction:column;gap:.5rem}
     .doc-list li{display:flex;gap:.5rem;color:#c4c4d4;font-size:.9rem;line-height:1.5}
     .doc-list li::before{content:"→";color:#6366f1;flex-shrink:0}
-    .role-card{background:#0d0d16;border:1px solid #1a1a2e;border-radius:8px;padding:.75rem 1rem;margin-bottom:.5rem}
+    .role-card{background:#1b1b28;border:1px solid #272738;border-radius:8px;padding:.75rem 1rem;margin-bottom:.5rem}
     .role-name{font-weight:600;font-size:.85rem;margin-bottom:.2rem;color:#a78bfa}
-    .role-desc{font-size:.82rem;color:#888}
+    .role-desc{font-size:.82rem;color:#9a9aa8}
     .oq-table{width:100%;border-collapse:collapse;font-size:.82rem}
-    .oq-table th{text-align:left;padding:.5rem .75rem;color:#555;font-weight:500;border-bottom:1px solid #1a1a2e}
-    .oq-table td{padding:.6rem .75rem;color:#c4c4d4;border-bottom:1px solid #0f0f1a;vertical-align:top;line-height:1.5}
+    .oq-table th{text-align:left;padding:.5rem .75rem;color:#6c6c7a;font-weight:500;border-bottom:1px solid #272738}
+    .oq-table td{padding:.6rem .75rem;color:#c4c4d4;border-bottom:1px solid #1a1a28;vertical-align:top;line-height:1.5}
     .oq-table tr:last-child td{border-bottom:none}
     .owner-chip{background:rgba(99,102,241,.15);color:#a78bfa;padding:.15rem .5rem;border-radius:4px;font-size:.75rem}
-    .textarea-edit{background:#0d0d16;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:6px;padding:.5rem .75rem;font-family:'DM Sans',sans-serif;font-size:.85rem;width:100%;resize:vertical;min-height:60px}
+    .textarea-edit{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:6px;padding:.5rem .75rem;font-family:'DM Sans',sans-serif;font-size:.85rem;width:100%;resize:vertical;min-height:60px}
     .textarea-edit:focus{outline:none;border-color:#6366f1}
-    .input-edit{background:#0d0d16;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:6px;padding:.4rem .6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;width:100%}
+    .input-edit{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:6px;padding:.4rem .6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;width:100%}
     .input-edit:focus{outline:none;border-color:#6366f1}
-    .add-row-btn{background:transparent;border:1px dashed #2a2a3a;color:#555;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.78rem;margin-top:.5rem;font-family:'DM Sans',sans-serif}
+    .add-row-btn{background:transparent;border:1px dashed #3a3a4e;color:#6c6c7a;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.78rem;margin-top:.5rem;font-family:'DM Sans',sans-serif}
     .add-row-btn:hover{border-color:#6366f1;color:#a78bfa}
     .avg-grid{display:grid;gap:.75rem}
-    .avg-item label{display:block;font-size:.72rem;color:#555;margin-bottom:.3rem;font-weight:500}
+    .avg-item label{display:block;font-size:.72rem;color:#6c6c7a;margin-bottom:.3rem;font-weight:500}
     .avg-item p{font-size:.88rem;color:#c4c4d4}
     .scope-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
     @media(max-width:600px){.scope-grid{grid-template-columns:1fr}.nav{padding:.75rem 1rem}.dashboard{padding:1rem}.doc-view{padding:1rem}}
@@ -137,6 +144,10 @@
 <div id="root"></div>
 <script type="text/babel" data-type="module">
 const { useState, useEffect, useRef, useCallback } = React;
+
+// Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
+// Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
+const APP_BUILD = "fix-12 · 2026-10-23 17:45";
 
 const INTERVIEW_STAGES = [
   { id:"context", label:{nl:"Context",en:"Context"}, questions:[
@@ -217,8 +228,20 @@ function App() {
   const [newSessionTitle, setNewSessionTitle] = useState("");
   const [showNewSession, setShowNewSession] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [model, setModel] = useState(() => localStorage.getItem("pd_model") || "claude-haiku-5-5");
+  const [fbError, setFbError] = useState(null);
   const messagesEndRef = useRef(null);
   const t = (nl, en) => lang === "nl" ? nl : en;
+
+  const MODELS = [
+    { id: "claude-haiku-5-5", label: t("Haiku 5.5 (goedkoop)", "Haiku 5.5 (cheap)") },
+    { id: "claude-sonnet-5-5", label: t("Sonnet 5.5 (preciezer, duurder)", "Sonnet 5.5 (sharper, pricier)") },
+  ];
+
+  const changeModel = (id) => {
+    setModel(id);
+    localStorage.setItem("pd_model", id);
+  };
 
   useEffect(() => {
     if (fbReady) return;
@@ -241,6 +264,9 @@ function App() {
       setSessions(snap.docs
         .filter(d => d.data().members?.includes(user.email) || d.data().ownerId === user.uid)
         .map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error("sessions onSnapshot error:", err);
+      setFbError(`${t("Sessies laden mislukt","Failed to load sessions")}: ${err.code || err.message}`);
     });
   }, [user, fbReady]);
 
@@ -250,6 +276,9 @@ function App() {
     const q = query(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), orderBy("createdAt", "asc"));
     return onSnapshot(q, snap => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error("messages onSnapshot error:", err);
+      setFbError(`${t("Berichten laden mislukt","Failed to load messages")}: ${err.code || err.message}`);
     });
   }, [activeSession, fbReady]);
 
@@ -274,26 +303,32 @@ function App() {
 
   const createSession = async () => {
     if (!newSessionTitle.trim()) return;
+    setFbError(null);
     const { collection, addDoc, serverTimestamp } = window._fbFns;
     const sessionTitle = newSessionTitle;
-    const ref = await addDoc(collection(window._fbDb, "pd_sessions"), {
-      title: sessionTitle, ownerId: user.uid, ownerEmail: user.email,
-      ownerName: user.displayName, members: [user.email], lang,
-      stageIndex: 0, questionIndex: 0, createdAt: serverTimestamp(), status: "active"
-    });
-    const session = { id: ref.id, title: sessionTitle, ownerId: user.uid, ownerEmail: user.email, members: [user.email], lang, stageIndex: 0, questionIndex: 0 };
-    setActiveSession(session);
-    setStageIndex(0); setQuestionIndex(0);
-    setNewSessionTitle(""); setShowNewSession(false);
-    const firstQ = INTERVIEW_STAGES[0].questions[0][lang];
-    const intro = (lang === "nl")
-      ? `Welkom! Ik ga je helpen om "${sessionTitle}" goed in kaart te brengen.\n\nWe doorlopen samen 7 fases: Context, Probleem, Doel, Gebruikers, Scope, AVG en Open Vragen. Aan het einde genereer ik automatisch een werkdocument.\n\nLaten we beginnen met de eerste vraag:\n\n${firstQ}`
-      : `Welcome! I'll help you map out "${sessionTitle}" clearly.\n\nWe'll go through 7 phases: Context, Problem, Goal, Users, Scope, GDPR and Open Questions. At the end I'll generate a working document.\n\nLet's start with the first question:\n\n${firstQ}`;
-    const msgRef = await addDoc(collection(window._fbDb, "pd_sessions", ref.id, "messages"), {
-      role: "assistant", content: intro, createdAt: serverTimestamp()
-    });
-    setMessages([{ id: msgRef.id, role: "assistant", content: intro }]);
-    setView("session");
+    try {
+      const ref = await addDoc(collection(window._fbDb, "pd_sessions"), {
+        title: sessionTitle, ownerId: user.uid, ownerEmail: user.email,
+        ownerName: user.displayName, members: [user.email], lang,
+        stageIndex: 0, questionIndex: 0, createdAt: serverTimestamp(), status: "active"
+      });
+      const session = { id: ref.id, title: sessionTitle, ownerId: user.uid, ownerEmail: user.email, members: [user.email], lang, stageIndex: 0, questionIndex: 0 };
+      setActiveSession(session);
+      setStageIndex(0); setQuestionIndex(0);
+      setNewSessionTitle(""); setShowNewSession(false);
+      const firstQ = INTERVIEW_STAGES[0].questions[0][lang];
+      const intro = (lang === "nl")
+        ? `Welkom! Ik ga je helpen om "${sessionTitle}" goed in kaart te brengen.\n\nWe doorlopen samen 7 fases: Context, Probleem, Doel, Gebruikers, Scope, AVG en Open Vragen. Aan het einde genereer ik automatisch een werkdocument.\n\nLaten we beginnen met de eerste vraag:\n\n${firstQ}`
+        : `Welcome! I'll help you map out "${sessionTitle}" clearly.\n\nWe'll go through 7 phases: Context, Problem, Goal, Users, Scope, GDPR and Open Questions. At the end I'll generate a working document.\n\nLet's start with the first question:\n\n${firstQ}`;
+      const msgRef = await addDoc(collection(window._fbDb, "pd_sessions", ref.id, "messages"), {
+        role: "assistant", content: intro, createdAt: serverTimestamp()
+      });
+      setMessages([{ id: msgRef.id, role: "assistant", content: intro }]);
+      setView("session");
+    } catch (e) {
+      console.error("createSession error:", e);
+      setFbError(`${t("Sessie aanmaken mislukt","Failed to create session")}: ${e.code || e.message}`);
+    }
   };
 
   const openSession = (s) => {
@@ -318,12 +353,15 @@ function App() {
     history.push({ role: "user", content: userMsg });
     const systemContext = `${SYSTEM_PROMPT(lang)}\n\nHuidige fase: ${stage.label[lang]}\nHuidige vraag was: ${stage.questions[questionIndex][lang]}\n\n${isLastQ && !isLastStage ? `Na je reactie, introduceer de volgende fase: "${INTERVIEW_STAGES[stageIndex+1].label[lang]}" en stel de eerste vraag.` : isLastStage && isLastQ ? "Dit was de laatste vraag. Geef een afsluitende samenvatting en zeg dat het document nu gegenereerd kan worden via de knop bovenaan." : "Stel een verdiepende vervolgvraag OF beweeg naar de volgende vraag als het antwoord volledig is."}`;
     try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      const resp = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system:systemContext, messages:history })
+        body: JSON.stringify({ model, max_tokens:1000, system:systemContext, messages:history })
       });
       const data = await resp.json();
-      const aiText = data.content?.[0]?.text || "...";
+      if (!resp.ok || !data.content?.[0]?.text) {
+        throw new Error(data.error?.message || data.error || `Serverfout (${resp.status})`);
+      }
+      const aiText = data.content[0].text;
       await addDoc(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), {
         role:"assistant", content:aiText, createdAt:serverTimestamp()
       });
@@ -332,7 +370,10 @@ function App() {
       else if (!isLastQ) { newQ = questionIndex+1; }
       setStageIndex(newStage); setQuestionIndex(newQ);
       await updateDoc(fbDoc(window._fbDb, "pd_sessions", activeSession.id), { stageIndex:newStage, questionIndex:newQ });
-    } catch(e) { console.error(e); }
+    } catch(e) {
+      console.error(e);
+      alert((lang==="nl" ? "Er ging iets mis: " : "Something went wrong: ") + e.message);
+    }
     setLoading(false);
   };
 
@@ -345,12 +386,15 @@ function App() {
 Reageer ALLEEN met de JSON, geen uitleg of markdown.
 Interview:\n${convo}`;
     try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      const resp = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+        body: JSON.stringify({ model, max_tokens:1000, messages:[{role:"user",content:prompt}] })
       });
       const data = await resp.json();
-      const raw = data.content?.[0]?.text?.replace(/```json|```/g,"").trim();
+      if (!resp.ok || !data.content?.[0]?.text) {
+        throw new Error(data.error?.message || data.error || `Serverfout (${resp.status})`);
+      }
+      const raw = data.content[0].text.replace(/```json|```/g,"").trim();
       const parsed = JSON.parse(raw);
       await setDoc(fbDoc(window._fbDb, "pd_documents", activeSession.id), {
         ...parsed, sessionId:activeSession.id, updatedAt:serverTimestamp()
@@ -396,7 +440,7 @@ Tot zo!`
     setInviteEmail("");
   };
 
-  if (!fbReady) return <div className="login-page"><div className="login-card"><div className="login-icon">⏳</div><p style={{color:"#666"}}>Firebase laden...</p></div></div>;
+  if (!fbReady) return <div className="login-page"><div className="login-card"><div className="login-icon">⏳</div><p style={{color:"#7a7a88"}}>Firebase laden...</p></div></div>;
 
   if (!user) return (
     <div className="login-page">
@@ -414,6 +458,7 @@ Tot zo!`
 
   return (
     <div className="app">
+      <div className="build-badge">{APP_BUILD}</div>
       <nav className="nav">
         <div className="nav-brand">🎯 Problem Discovery</div>
         <div className="nav-right">
@@ -421,6 +466,9 @@ Tot zo!`
             <button className={`lang-btn ${lang==="nl"?"active":""}`} onClick={()=>setLang("nl")}>NL</button>
             <button className={`lang-btn ${lang==="en"?"active":""}`} onClick={()=>setLang("en")}>EN</button>
           </div>
+          <select className="model-select" value={model} onChange={e=>changeModel(e.target.value)} title={t("AI-model","AI model")}>
+            {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+          </select>
           {view!=="dashboard" && <button className="btn btn-ghost btn-sm" onClick={()=>setView("dashboard")}>← {t("Dashboard","Dashboard")}</button>}
           {view==="session" && document_ && <button className="btn btn-primary btn-sm" onClick={()=>setView("document")}>📄 {t("Document","Document")}</button>}
           {view==="session" && <button className="btn btn-ghost btn-sm" onClick={generateDocument} disabled={loading}>{loading?"⏳":"✨"} {t("Genereer document","Generate document")}</button>}
@@ -432,6 +480,13 @@ Tot zo!`
         </div>
       </nav>
 
+      {fbError && (
+        <div className="fb-error-banner">
+          ⚠️ {fbError}
+          <button className="fb-error-dismiss" onClick={()=>setFbError(null)}>✕</button>
+        </div>
+      )}
+
       {view==="dashboard" && (
         <div className="dashboard">
           <div className="dashboard-header">
@@ -440,7 +495,7 @@ Tot zo!`
           </div>
           {showNewSession && (
             <div className="new-session-form">
-              <label style={{fontSize:".8rem",color:"#888",display:"block",marginBottom:".4rem"}}>{t("Naam van het initiatief / feature","Name of the initiative / feature")}</label>
+              <label style={{fontSize:".8rem",color:"#9a9aa8",display:"block",marginBottom:".4rem"}}>{t("Naam van het initiatief / feature","Name of the initiative / feature")}</label>
               <div className="input-row">
                 <input className="input" placeholder={t("bv. Klantportaal self-service","e.g. Customer portal self-service")} value={newSessionTitle} onChange={e=>setNewSessionTitle(e.target.value)} onKeyDown={e=>e.key==="Enter"&&createSession()} />
                 <button className="btn btn-primary" onClick={createSession}>{t("Start","Start")}</button>
@@ -474,19 +529,29 @@ Tot zo!`
             </div>
           </div>
           <div className="chat-area">
-            {messages.map(m=>(
-              <div key={m.id} className={`msg ${m.role}`}>
-                <div className="msg-avatar">{m.role==="assistant"?"🤖":"👤"}</div>
-                <div className="msg-bubble">{m.content}</div>
-              </div>
+            {messages.map((m,i)=>(
+              <React.Fragment key={m.id}>
+                <div className={`msg ${m.role}`}>
+                  <div className="msg-bubble">{m.content}</div>
+                </div>
+                {m.role==="assistant" && i===messages.length-1 && !loading && (
+                  <div className="inline-input-row">
+                    <textarea
+                      className="chat-textarea"
+                      placeholder={t("Typ je antwoord... (Enter = versturen, Shift+Enter = nieuwe regel)","Type your answer... (Enter = send, Shift+Enter = new line)")}
+                      value={input}
+                      onChange={e=>setInput(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}}}
+                      rows={1}
+                      autoFocus
+                    />
+                    <button className="send-btn" onClick={sendMessage} disabled={!input.trim()}>↑</button>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
-            {loading && <div className="msg assistant"><div className="msg-avatar">🤖</div><div className="msg-bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
+            {loading && <div className="msg assistant"><div className="msg-bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
             <div ref={messagesEndRef}/>
-          </div>
-
-          <div className="chat-input-area">
-            <textarea className="chat-textarea" placeholder={t("Typ je antwoord... (Enter = versturen, Shift+Enter = nieuwe regel)","Type your answer... (Enter = send, Shift+Enter = new line)")} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}}} rows={1}/>
-            <button className="send-btn" onClick={sendMessage} disabled={loading||!input.trim()}>↑</button>
           </div>
         </div>
       )}
