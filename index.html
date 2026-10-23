@@ -145,6 +145,18 @@
     @media(max-width:600px){.scope-grid{grid-template-columns:1fr}.nav{padding:.75rem 1rem}.dashboard{padding:1rem}.doc-view{padding:1rem}}
     .spinner{display:inline-block;width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
     @keyframes spin{to{transform:rotate(360deg)}}
+    /* fix-22: schone PDF-export via de browser-printfunctie (window.print()).
+       Verbergt app-chrome en dwingt lichte achtergrond/donkere tekst af, zodat
+       alleen het document zelf wordt afgedrukt/opgeslagen als PDF. */
+    @media print{
+      .nav,.build-badge,.scroll-top-btn,.fb-error-banner,.doc-header-actions{display:none!important}
+      body{background:#fff!important}
+      .doc-view{max-width:100%;padding:0;color:#1c1c26}
+      .doc-section-title{color:#1c1c26}
+      .doc-section p,.doc-list li,.role-desc,.avg-item p{color:#2a2a38}
+      .role-card{break-inside:avoid}
+      .doc-section{break-inside:avoid}
+    }
   </style>
 </head>
 <body>
@@ -154,7 +166,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-21 · 2026-10-23 22:18";
+const APP_BUILD = "fix-22 · 2026-10-23 22:22";
 
 // Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
 const MODEL_PRICING = {
@@ -456,8 +468,9 @@ function App() {
     history.push({ role: "user", content: userMsg });
     const systemContext = `${SYSTEM_PROMPT(lang)}\n\nHuidige fase: ${stage.label[lang]}\nHuidige vraag was: ${stage.questions[questionIndex][lang]}\n\n${isLastQ && !isLastStage ? `Na je reactie, introduceer de volgende fase: "${INTERVIEW_STAGES[stageIndex+1].label[lang]}" en stel de eerste vraag.` : isLastStage && isLastQ ? "Dit was de laatste vraag. Geef een afsluitende samenvatting en zeg dat het document nu gegenereerd kan worden via de knop bovenaan." : "Stel een verdiepende vervolgvraag OF beweeg naar de volgende vraag als het antwoord volledig is."}`;
     try {
+      const idToken = await window._fbAuth.currentUser.getIdToken();
       const resp = await fetch("/api/claude", {
-        method:"POST", headers:{"Content-Type":"application/json"},
+        method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer "+idToken},
         body: JSON.stringify({ model, max_tokens:1000, system:systemContext, messages:history })
       });
       const data = await resp.json();
@@ -498,8 +511,9 @@ function App() {
 Belangrijk: zorg dat de output 100% geldige JSON is. Gebruik GEEN letterlijke regelovergangen binnen een stringwaarde — gebruik daar \\n voor. Reageer ALLEEN met de JSON, geen uitleg of markdown.
 Interview:\n${convo}`;
     try {
+      const idToken = await window._fbAuth.currentUser.getIdToken();
       const resp = await fetch("/api/claude", {
-        method:"POST", headers:{"Content-Type":"application/json"},
+        method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer "+idToken},
         body: JSON.stringify({ model, max_tokens:8192, messages:[{role:"user",content:prompt}] })
       });
       const data = await resp.json();
@@ -711,10 +725,13 @@ Tot zo!`
         <div className="doc-view">
           <div className="doc-header">
             <div className="doc-title">{document_.title||activeSession?.title}</div>
-            <div style={{display:"flex",gap:".5rem"}}>
+            <div className="doc-header-actions" style={{display:"flex",gap:".5rem"}}>
               {editingDoc
                 ? <><button className="btn btn-primary btn-sm" onClick={saveDocument}>💾 {t("Opslaan","Save")}</button><button className="btn btn-ghost btn-sm" onClick={()=>setEditingDoc(false)}>✕</button></>
-                : <button className="btn btn-ghost btn-sm" onClick={()=>{setDocDraft({...document_});setEditingDoc(true);}}>✏️ {t("Bewerken","Edit")}</button>
+                : <>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>{setDocDraft({...document_});setEditingDoc(true);}}>✏️ {t("Bewerken","Edit")}</button>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>📄 {t("Download als PDF","Download as PDF")}</button>
+                  </>
               }
             </div>
           </div>
