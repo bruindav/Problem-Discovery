@@ -149,7 +149,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-15 · 2026-10-23 19:00";
+const APP_BUILD = "fix-16 · 2026-10-23 19:18";
 
 // Maakt URL's in een foutmelding klikbaar (bv. de Firestore-index-aanmaaklink
 // die Firebase meegeeft bij een failed-precondition fout).
@@ -578,18 +578,17 @@ Tot zo!`
                 <div className={`msg ${m.role}`}>
                   <div className="msg-bubble">{m.content}</div>
                 </div>
-                {m.role==="assistant" && i===messages.length-1 && !loading && (
+                {i===messages.length-1 && !loading && (
                   <div className="inline-input-row">
                     <textarea
                       className="chat-textarea"
-                      placeholder={t("Typ je antwoord... (Enter = versturen, Shift+Enter = nieuwe regel)","Type your answer... (Enter = send, Shift+Enter = new line)")}
+                      placeholder={t("Typ je antwoord...","Type your answer...")}
                       value={input}
                       onChange={e=>setInput(e.target.value)}
-                      onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}}}
                       rows={1}
                       autoFocus
                     />
-                    <button className="send-btn" onClick={sendMessage} disabled={!input.trim()}>↑</button>
+                    <button className="send-btn" onClick={sendMessage} disabled={!input.trim()} title={t("Versturen","Send")}>↑</button>
                   </div>
                 )}
               </React.Fragment>
