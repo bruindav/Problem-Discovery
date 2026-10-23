@@ -154,7 +154,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-20 · 2026-10-23 22:10";
+const APP_BUILD = "fix-21 · 2026-10-23 22:18";
 
 // Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
 const MODEL_PRICING = {
@@ -173,6 +173,34 @@ function calcCost(modelId, inputTokens, outputTokens) {
 function extractText(data) {
   const block = data?.content?.find(b => b && b.type === "text" && b.text);
   return block ? block.text : null;
+}
+
+// Modellen zetten soms een letterlijke regelovergang (newline/tab) binnen een
+// JSON-stringwaarde i.p.v. de geëscapete vorm (\n), wat JSON.parse laat
+// struikelen met "Unterminated string". Deze scanner loopt teken voor teken
+// door de tekst, houdt bij of we ons binnen een string bevinden, en escaped
+// letterlijke control characters daar alsnog — zonder de JSON-structuur zelf
+// aan te raken.
+function sanitizeJsonText(text) {
+  let result = "";
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) { result += ch; escaped = false; continue; }
+      if (ch === "\\") { result += ch; escaped = true; continue; }
+      if (ch === "\"") { inString = false; result += ch; continue; }
+      if (ch === "\n") { result += "\\n"; continue; }
+      if (ch === "\r") { result += "\\r"; continue; }
+      if (ch === "\t") { result += "\\t"; continue; }
+      result += ch;
+    } else {
+      if (ch === "\"") { inString = true; result += ch; continue; }
+      result += ch;
+    }
+  }
+  return result;
 }
 
 // Maakt URL's in een foutmelding klikbaar (bv. de Firestore-index-aanmaaklink
@@ -467,12 +495,12 @@ function App() {
     const convo = messages.map(m => `${m.role==="user"?"Business Owner":"Analist"}: ${m.content}`).join("\n\n");
     const prompt = `Op basis van dit interview, genereer een feature beschrijving werkdocument in JSON met deze exacte structuur:
 {"title":"...","waardehypothese":"...","strategischeRelevantie":"...","voorWie":[{"rol":"...","beschrijving":"..."}],"scope":["..."],"buitenScope":["..."],"acceptatiecriteria":["..."],"avg":{"persoonsgegevens":"...","dpia":"...","verwerkingsverantwoordelijke":"..."},"openVragen":[{"vraag":"...","aanWie":"...","eigenaar":"..."}],"acties":[{"actie":"...","verantwoordelijke":"...","eigenaar":"..."}]}
-Reageer ALLEEN met de JSON, geen uitleg of markdown.
+Belangrijk: zorg dat de output 100% geldige JSON is. Gebruik GEEN letterlijke regelovergangen binnen een stringwaarde — gebruik daar \\n voor. Reageer ALLEEN met de JSON, geen uitleg of markdown.
 Interview:\n${convo}`;
     try {
       const resp = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model, max_tokens:4096, messages:[{role:"user",content:prompt}] })
+        body: JSON.stringify({ model, max_tokens:8192, messages:[{role:"user",content:prompt}] })
       });
       const data = await resp.json();
       const rawText = extractText(data);
@@ -483,7 +511,22 @@ Interview:\n${convo}`;
         );
       }
       const raw = rawText.replace(/```json|```/g,"").trim();
-      const parsed = JSON.parse(raw);
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (parseErr) {
+        try {
+          parsed = JSON.parse(sanitizeJsonText(raw));
+        } catch (parseErr2) {
+          const truncated = data.stop_reason === "max_tokens";
+          throw new Error(
+            (truncated
+              ? (lang==="nl" ? "Antwoord was te lang en is afgekapt. " : "Response was too long and got cut off. ")
+              : "") +
+            `${parseErr2.message} — ${t("eerste 200 tekens van het antwoord","first 200 chars of the response")}: ${raw.slice(0,200)}`
+          );
+        }
+      }
       await setDoc(fbDoc(window._fbDb, "pd_documents", activeSession.id), {
         ...parsed, sessionId:activeSession.id, updatedAt:serverTimestamp()
       });
