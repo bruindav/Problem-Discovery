@@ -166,7 +166,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-22 · 2026-10-23 22:22";
+const APP_BUILD = "fix-23 · 2026-10-23 22:34";
 
 // Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
 const MODEL_PRICING = {
@@ -228,7 +228,7 @@ function linkify(text) {
 
 const INTERVIEW_STAGES = [
   { id:"context", label:{nl:"Context",en:"Context"}, questions:[
-    {nl:"Wat is de naam of werktitel van dit initiatief?",en:"What is the name or working title of this initiative?"},
+    {nl:"Wat is de naam of werktitel van deze feature?",en:"What is the name or working title of this feature?"},
     {nl:"Beschrijf in één zin wat je wil oplossen of bereiken.",en:"Describe in one sentence what you want to solve or achieve."},
     {nl:"In welke afdeling of context speelt dit zich af?",en:"In which department or context does this take place?"},
   ]},
@@ -241,12 +241,12 @@ const INTERVIEW_STAGES = [
   { id:"goal", label:{nl:"Het Doel",en:"The Goal"}, questions:[
     {nl:"Wat wil je concreet bereiken? Hoe ziet succes eruit over 6 maanden?",en:"What do you concretely want to achieve? What does success look like in 6 months?"},
     {nl:"Welk overkoepelend bedrijfsdoel draagt dit bij? Is dit strategisch geprioriteerd?",en:"Which overarching business objective does this contribute to? Is this strategically prioritised?"},
-    {nl:"Hoe meet je of dit initiatief geslaagd is? Welke KPIs of metrics gebruik je?",en:"How do you measure whether this initiative is successful? Which KPIs or metrics do you use?"},
+    {nl:"Hoe meet je of deze feature geslaagd is? Welke KPIs of metrics gebruik je?",en:"How do you measure whether this feature is successful? Which KPIs or metrics do you use?"},
   ]},
   { id:"users", label:{nl:"Gebruikers",en:"Users"}, questions:[
     {nl:"Wie zijn de primaire gebruikers van de oplossing? Beschrijf hun rol en context.",en:"Who are the primary users of the solution? Describe their role and context."},
     {nl:"Zijn er secundaire gebruikers of stakeholders die indirect baat hebben?",en:"Are there secondary users or stakeholders who benefit indirectly?"},
-    {nl:"Wie heeft er beslissingsbevoegdheid over dit initiatief? Wie is de eigenaar?",en:"Who has decision-making authority over this initiative? Who is the owner?"},
+    {nl:"Wie heeft er beslissingsbevoegdheid over deze feature? Wie is de eigenaar?",en:"Who has decision-making authority over this feature? Who is the owner?"},
     {nl:"Zijn er partijen die weerstand kunnen bieden? Waarom?",en:"Are there parties who might resist? Why?"},
   ]},
   { id:"scope", label:{nl:"Scope",en:"Scope"}, questions:[
@@ -652,7 +652,7 @@ Tot zo!`
           </div>
           {showNewSession && (
             <div className="new-session-form">
-              <label style={{fontSize:".8rem",color:"#9a9aa8",display:"block",marginBottom:".4rem"}}>{t("Naam van het initiatief / feature","Name of the initiative / feature")}</label>
+              <label style={{fontSize:".8rem",color:"#9a9aa8",display:"block",marginBottom:".4rem"}}>{t("Naam van de feature","Name of the feature")}</label>
               <div className="input-row">
                 <input className="input" placeholder={t("bv. Klantportaal self-service","e.g. Customer portal self-service")} value={newSessionTitle} onChange={e=>setNewSessionTitle(e.target.value)} onKeyDown={e=>e.key==="Enter"&&createSession()} />
                 <button className="btn btn-primary" onClick={createSession}>{t("Start","Start")}</button>
