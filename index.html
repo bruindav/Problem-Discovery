@@ -55,6 +55,7 @@
     .model-select{background:#272738;color:#c4c4d4;border:1px solid #3a3a4e;border-radius:6px;padding:.3rem .5rem;font-size:.78rem;font-family:'DM Sans',sans-serif;cursor:pointer}
     .fb-error-banner{background:#3d1f22;color:#ffb4bb;border-bottom:1px solid #5c2a30;padding:.65rem 1.5rem;font-size:.82rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
     .fb-error-dismiss{background:none;border:none;color:#ffb4bb;cursor:pointer;font-size:.9rem;padding:0 .25rem}
+    .build-badge{position:fixed;bottom:.5rem;right:.6rem;background:rgba(0,0,0,.55);color:#9a9aa8;font-size:.68rem;padding:.25rem .55rem;border-radius:6px;z-index:999;font-family:monospace;pointer-events:none}
     .user-chip{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#9a9aa8}
     .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
     .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:radial-gradient(ellipse at 30% 50%,#241a3d 0%,#141420 60%)}
@@ -143,6 +144,10 @@
 <div id="root"></div>
 <script type="text/babel" data-type="module">
 const { useState, useEffect, useRef, useCallback } = React;
+
+// Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
+// Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
+const APP_BUILD = "fix-12 · 2026-10-23 17:45";
 
 const INTERVIEW_STAGES = [
   { id:"context", label:{nl:"Context",en:"Context"}, questions:[
@@ -453,6 +458,7 @@ Tot zo!`
 
   return (
     <div className="app">
+      <div className="build-badge">{APP_BUILD}</div>
       <nav className="nav">
         <div className="nav-brand">🎯 Problem Discovery</div>
         <div className="nav-right">
