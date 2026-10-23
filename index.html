@@ -166,7 +166,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-23 · 2026-10-23 22:34";
+const APP_BUILD = "fix-24 · 2026-10-23 23:00";
 
 // Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
 const MODEL_PRICING = {
@@ -336,13 +336,12 @@ function App() {
 
   useEffect(() => {
     if (!user || !fbReady) return;
-    const { collection, query, where, orderBy, onSnapshot } = window._fbFns;
-    // Firestore staat een list-query alleen toe als die zelf al bewijst dat ze
-    // enkel documenten oplevert die aan de beveiligingsregel voldoen. Vandaar
-    // de where("members","array-contains",...) hier i.p.v. client-side filteren.
+    const { collection, query, orderBy, onSnapshot } = window._fbFns;
+    // fix-24: sessies worden gedeeld tussen alle geautoriseerde accounts (zie
+    // ALLOWED_EMAILS in de Worker en de Firestore-rules), dus geen client-side
+    // filter op "members" meer — de Firestore-rules bepalen wie mag lezen.
     const q = query(
       collection(window._fbDb, "pd_sessions"),
-      where("members", "array-contains", user.email),
       orderBy("createdAt", "desc")
     );
     return onSnapshot(q, snap => {
