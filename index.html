@@ -7,6 +7,9 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- fix-25: directe PDF-generatie i.p.v. de browser-printdialoog (window.print()
+       opende op mobiel een OS-printmenu i.p.v. gewoon een bestand te downloaden). -->
+  <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -145,18 +148,6 @@
     @media(max-width:600px){.scope-grid{grid-template-columns:1fr}.nav{padding:.75rem 1rem}.dashboard{padding:1rem}.doc-view{padding:1rem}}
     .spinner{display:inline-block;width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
     @keyframes spin{to{transform:rotate(360deg)}}
-    /* fix-22: schone PDF-export via de browser-printfunctie (window.print()).
-       Verbergt app-chrome en dwingt lichte achtergrond/donkere tekst af, zodat
-       alleen het document zelf wordt afgedrukt/opgeslagen als PDF. */
-    @media print{
-      .nav,.build-badge,.scroll-top-btn,.fb-error-banner,.doc-header-actions{display:none!important}
-      body{background:#fff!important}
-      .doc-view{max-width:100%;padding:0;color:#1c1c26}
-      .doc-section-title{color:#1c1c26}
-      .doc-section p,.doc-list li,.role-desc,.avg-item p{color:#2a2a38}
-      .role-card{break-inside:avoid}
-      .doc-section{break-inside:avoid}
-    }
   </style>
 </head>
 <body>
@@ -166,7 +157,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-24 · 2026-10-23 23:00";
+const APP_BUILD = "fix-25 · 2026-10-23 23:15";
 
 // Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
 const MODEL_PRICING = {
@@ -565,6 +556,70 @@ Interview:\n${convo}`;
     setEditingDoc(false);
   };
 
+  const downloadPdf = () => {
+    const d = document_;
+    if (!d) return;
+    const pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const marginL = 48, marginR = 48, maxW = pageW - marginL - marginR;
+    let y = 56;
+    const ensureSpace = (needed) => { if (y + needed > pageH - 48) { pdf.addPage(); y = 56; } };
+    const heading = (text) => {
+      ensureSpace(28);
+      pdf.setFont("helvetica", "bold"); pdf.setFontSize(13);
+      pdf.text(text, marginL, y); y += 20;
+      pdf.setFont("helvetica", "normal"); pdf.setFontSize(10.5);
+    };
+    const paragraph = (text) => {
+      if (!text) return;
+      pdf.splitTextToSize(String(text), maxW).forEach(line => { ensureSpace(14); pdf.text(line, marginL, y); y += 14; });
+      y += 8;
+    };
+    const listItem = (text) => {
+      pdf.splitTextToSize("•  " + String(text), maxW).forEach(line => { ensureSpace(14); pdf.text(line, marginL, y); y += 14; });
+    };
+
+    pdf.setFont("helvetica", "bold"); pdf.setFontSize(18);
+    pdf.splitTextToSize(d.title || activeSession?.title || t("Feature", "Feature"), maxW).forEach(line => { ensureSpace(24); pdf.text(line, marginL, y); y += 24; });
+    y += 8;
+    pdf.setFont("helvetica", "normal"); pdf.setFontSize(10.5);
+
+    heading(t("Waardehypothese", "Value Hypothesis")); paragraph(d.waardehypothese);
+    heading(t("Strategische Relevantie", "Strategic Relevance")); paragraph(d.strategischeRelevantie);
+
+    heading(t("Voor Wie", "For Whom"));
+    (d.voorWie || []).forEach(r => listItem(`${r.rol}: ${r.beschrijving}`));
+    y += 6;
+
+    heading(t("Binnen Scope", "In Scope"));
+    (d.scope || []).forEach(s => listItem(s));
+    y += 6;
+
+    heading(t("Buiten Scope", "Out of Scope"));
+    (d.buitenScope || []).forEach(s => listItem(s));
+    y += 6;
+
+    heading(t("Acceptatiecriteria", "Acceptance Criteria"));
+    (d.acceptatiecriteria || []).forEach(s => listItem(s));
+    y += 6;
+
+    heading("AVG / GDPR");
+    paragraph(`${t("Persoonsgegevens", "Personal data")}: ${d.avg?.persoonsgegevens || ""}`);
+    paragraph(`DPIA: ${d.avg?.dpia || ""}`);
+    paragraph(`${t("Verwerkingsverantwoordelijke", "Data controller")}: ${d.avg?.verwerkingsverantwoordelijke || ""}`);
+
+    heading(t("Openstaande Vragen", "Open Questions"));
+    (d.openVragen || []).forEach(q => listItem(`${q.vraag} (${t("aan","to")}: ${q.aanWie}, ${t("eigenaar","owner")}: ${q.eigenaar})`));
+    y += 6;
+
+    heading(t("Acties", "Actions"));
+    (d.acties || []).forEach(a => listItem(`${a.actie} — ${t("verantwoordelijke","responsible")}: ${a.verantwoordelijke}, ${t("eigenaar","owner")}: ${a.eigenaar}`));
+
+    const fileName = (d.title || activeSession?.title || "feature").trim().replace(/[^\w\-]+/g, "_").replace(/^_+|_+$/g, "") + ".pdf";
+    pdf.save(fileName || "feature.pdf");
+  };
+
   const inviteStakeholder = async () => {
     if (!inviteEmail.trim() || !activeSession) return;
     const { doc: fbDoc, updateDoc } = window._fbFns;
@@ -729,7 +784,7 @@ Tot zo!`
                 ? <><button className="btn btn-primary btn-sm" onClick={saveDocument}>💾 {t("Opslaan","Save")}</button><button className="btn btn-ghost btn-sm" onClick={()=>setEditingDoc(false)}>✕</button></>
                 : <>
                     <button className="btn btn-ghost btn-sm" onClick={()=>{setDocDraft({...document_});setEditingDoc(true);}}>✏️ {t("Bewerken","Edit")}</button>
-                    <button className="btn btn-ghost btn-sm" onClick={()=>window.print()}>📄 {t("Download als PDF","Download as PDF")}</button>
+                    <button className="btn btn-ghost btn-sm" onClick={downloadPdf}>📄 {t("Download als PDF","Download as PDF")}</button>
                   </>
               }
             </div>
