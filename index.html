@@ -36,9 +36,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'DM Sans',sans-serif;background:#0a0a0f;color:#e8e8f0;min-height:100vh}
+    html{overflow-x:hidden}
+    body{font-family:'DM Sans',sans-serif;background:#0a0a0f;color:#e8e8f0;min-height:100vh;min-height:100dvh;overflow-x:hidden}
     ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:4px}
-    .app{display:flex;flex-direction:column;min-height:100vh}
+    .app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
     .nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(10,10,15,.95);border-bottom:1px solid #1a1a2e;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);flex-wrap:wrap;gap:.5rem}
     .nav-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .nav-right{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
@@ -51,9 +52,10 @@
     .lang-toggle{display:flex;background:#1a1a2e;border-radius:6px;overflow:hidden}
     .lang-btn{padding:.3rem .7rem;border:none;background:transparent;color:#666;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s}
     .lang-btn.active{background:#6366f1;color:#fff}
+    .model-select{background:#1a1a2e;color:#c4c4d4;border:1px solid #2a2a3a;border-radius:6px;padding:.3rem .5rem;font-size:.78rem;font-family:'DM Sans',sans-serif;cursor:pointer}
     .user-chip{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#888}
     .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
-    .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 30% 50%,#1a1030 0%,#0a0a0f 60%)}
+    .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:radial-gradient(ellipse at 30% 50%,#1a1030 0%,#0a0a0f 60%)}
     .login-card{text-align:center;padding:3rem;max-width:420px}
     .login-icon{font-size:3rem;margin-bottom:1.5rem}
     .login-card h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:.5rem;background:linear-gradient(135deg,#6366f1,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -75,7 +77,7 @@
     .input{background:#0d0d16;border:1px solid #2a2a3a;color:#e8e8f0;border-radius:8px;padding:.6rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;width:100%;transition:border .2s}
     .input:focus{outline:none;border-color:#6366f1}
     .input-row{display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
-    .session-layout{display:flex;flex-direction:column;height:calc(100vh - 57px)}
+    .session-layout{display:flex;flex-direction:column;height:calc(100vh - 57px);height:calc(100dvh - 57px)}
     .session-topbar{display:flex;align-items:center;gap:1rem;padding:.75rem 1.5rem;background:#0d0d16;border-bottom:1px solid #1a1a2e;flex-shrink:0;overflow-x:auto}
     .session-title-bar{font-family:'Syne',sans-serif;font-weight:600;font-size:.95rem;white-space:nowrap}
     .stage-pills{display:flex;gap:.4rem;overflow-x:auto;flex:1}
@@ -217,8 +219,19 @@ function App() {
   const [newSessionTitle, setNewSessionTitle] = useState("");
   const [showNewSession, setShowNewSession] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [model, setModel] = useState(() => localStorage.getItem("pd_model") || "claude-haiku-5-5");
   const messagesEndRef = useRef(null);
   const t = (nl, en) => lang === "nl" ? nl : en;
+
+  const MODELS = [
+    { id: "claude-haiku-5-5", label: t("Haiku 5.5 (goedkoop)", "Haiku 5.5 (cheap)") },
+    { id: "claude-sonnet-5-5", label: t("Sonnet 5.5 (preciezer, duurder)", "Sonnet 5.5 (sharper, pricier)") },
+  ];
+
+  const changeModel = (id) => {
+    setModel(id);
+    localStorage.setItem("pd_model", id);
+  };
 
   useEffect(() => {
     if (fbReady) return;
@@ -320,7 +333,7 @@ function App() {
     try {
       const resp = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, system:systemContext, messages:history })
+        body: JSON.stringify({ model, max_tokens:1000, system:systemContext, messages:history })
       });
       const data = await resp.json();
       if (!resp.ok || !data.content?.[0]?.text) {
@@ -353,7 +366,7 @@ Interview:\n${convo}`;
     try {
       const resp = await fetch("/api/claude", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{role:"user",content:prompt}] })
+        body: JSON.stringify({ model, max_tokens:1000, messages:[{role:"user",content:prompt}] })
       });
       const data = await resp.json();
       if (!resp.ok || !data.content?.[0]?.text) {
@@ -430,6 +443,9 @@ Tot zo!`
             <button className={`lang-btn ${lang==="nl"?"active":""}`} onClick={()=>setLang("nl")}>NL</button>
             <button className={`lang-btn ${lang==="en"?"active":""}`} onClick={()=>setLang("en")}>EN</button>
           </div>
+          <select className="model-select" value={model} onChange={e=>changeModel(e.target.value)} title={t("AI-model","AI model")}>
+            {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+          </select>
           {view!=="dashboard" && <button className="btn btn-ghost btn-sm" onClick={()=>setView("dashboard")}>← {t("Dashboard","Dashboard")}</button>}
           {view==="session" && document_ && <button className="btn btn-primary btn-sm" onClick={()=>setView("document")}>📄 {t("Document","Document")}</button>}
           {view==="session" && <button className="btn btn-ghost btn-sm" onClick={generateDocument} disabled={loading}>{loading?"⏳":"✨"} {t("Genereer document","Generate document")}</button>}
