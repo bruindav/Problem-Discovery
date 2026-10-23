@@ -53,6 +53,8 @@
     .lang-btn{padding:.3rem .7rem;border:none;background:transparent;color:#7a7a88;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s}
     .lang-btn.active{background:#6366f1;color:#fff}
     .model-select{background:#272738;color:#c4c4d4;border:1px solid #3a3a4e;border-radius:6px;padding:.3rem .5rem;font-size:.78rem;font-family:'DM Sans',sans-serif;cursor:pointer}
+    .fb-error-banner{background:#3d1f22;color:#ffb4bb;border-bottom:1px solid #5c2a30;padding:.65rem 1.5rem;font-size:.82rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+    .fb-error-dismiss{background:none;border:none;color:#ffb4bb;cursor:pointer;font-size:.9rem;padding:0 .25rem}
     .user-chip{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#9a9aa8}
     .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
     .login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:radial-gradient(ellipse at 30% 50%,#241a3d 0%,#141420 60%)}
@@ -84,22 +86,24 @@
     .stage-pill{padding:.25rem .75rem;border-radius:20px;font-size:.72rem;font-weight:500;white-space:nowrap;border:1px solid #3a3a4e;color:#6c6c7a;background:transparent}
     .stage-pill.done{border-color:#4a4a68;color:#6366f1;background:rgba(99,102,241,.1)}
     .stage-pill.active{border-color:#6366f1;color:#fff;background:#6366f1}
-    .chat-area{padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
-    .msg{display:flex;gap:.75rem;max-width:720px}
-    .msg.user{flex-direction:row-reverse;align-self:flex-end}
-    .msg-bubble{padding:.85rem 1.1rem;border-radius:14px;font-size:.88rem;line-height:1.6;max-width:540px;white-space:pre-wrap}
-    .msg.assistant .msg-bubble{background:#1e1e2c;border:1px solid #272738;color:#d4d4e8;border-radius:4px 14px 14px 14px}
-    .msg.user .msg-bubble{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:14px 4px 14px 14px}
-    .msg-avatar{width:30px;height:30px;border-radius:50%;background:#272738;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
-    .typing{display:flex;gap:4px;padding:.5rem}
-    .dot{width:6px;height:6px;border-radius:50%;background:#6366f1;animation:bounce 1.2s infinite}
+    .chat-area{padding:1.25rem 1.5rem 2rem;display:flex;flex-direction:column;gap:.9rem}
+    .msg{display:flex;max-width:100%}
+    .msg.assistant{justify-content:flex-start}
+    .msg.user{justify-content:flex-end}
+    .msg-bubble{padding:.9rem 1.2rem;border-radius:20px;font-size:.92rem;line-height:1.6;max-width:600px;white-space:pre-wrap}
+    .msg.assistant .msg-bubble{background:#f7f7fa;color:#1c1c26;border-radius:6px 20px 20px 20px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+    .msg.user .msg-bubble{background:#e7e3fd;color:#241a3d;border-radius:20px 6px 20px 20px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+    .inline-input-row{display:flex;gap:.6rem;align-items:flex-end;max-width:600px;align-self:flex-start;width:100%;margin-top:-.25rem}
+    .typing{display:flex;gap:4px;padding:.3rem .1rem}
+    .dot{width:6px;height:6px;border-radius:50%;background:#9a9aa8;animation:bounce 1.2s infinite}
     .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
     @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
     .invite-panel{background:#1a1a28;border-top:1px solid #272738;padding:.75rem 1.5rem;display:flex;gap:.75rem;align-items:center;flex-shrink:0;flex-wrap:wrap}
     .invite-panel label{font-size:.78rem;color:#7a7a88;white-space:nowrap}
     .chat-input-area{padding:1rem 1.5rem;background:#1b1b28;border-top:1px solid #272738;display:flex;gap:.75rem;align-items:flex-end;flex-shrink:0}
-    .chat-textarea{flex:1;background:#1e1e2c;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:10px;padding:.75rem 1rem;font-family:'DM Sans',sans-serif;font-size:.9rem;resize:none;min-height:44px;max-height:140px;transition:border .2s}
+    .chat-textarea{flex:1;background:#fff;border:1px solid #d8d8e4;color:#1c1c26;border-radius:16px;padding:.75rem 1.1rem;font-family:'DM Sans',sans-serif;font-size:.92rem;resize:none;min-height:46px;max-height:140px;transition:border .2s}
     .chat-textarea:focus{outline:none;border-color:#6366f1}
+    .chat-textarea::placeholder{color:#9a9aa8}
     .send-btn{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;width:44px;height:44px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .2s;flex-shrink:0}
     .send-btn:hover{opacity:.9}
     .send-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -220,6 +224,7 @@ function App() {
   const [showNewSession, setShowNewSession] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [model, setModel] = useState(() => localStorage.getItem("pd_model") || "claude-haiku-5-5");
+  const [fbError, setFbError] = useState(null);
   const messagesEndRef = useRef(null);
   const t = (nl, en) => lang === "nl" ? nl : en;
 
@@ -254,6 +259,9 @@ function App() {
       setSessions(snap.docs
         .filter(d => d.data().members?.includes(user.email) || d.data().ownerId === user.uid)
         .map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error("sessions onSnapshot error:", err);
+      setFbError(`${t("Sessies laden mislukt","Failed to load sessions")}: ${err.code || err.message}`);
     });
   }, [user, fbReady]);
 
@@ -263,6 +271,9 @@ function App() {
     const q = query(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), orderBy("createdAt", "asc"));
     return onSnapshot(q, snap => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error("messages onSnapshot error:", err);
+      setFbError(`${t("Berichten laden mislukt","Failed to load messages")}: ${err.code || err.message}`);
     });
   }, [activeSession, fbReady]);
 
@@ -287,26 +298,32 @@ function App() {
 
   const createSession = async () => {
     if (!newSessionTitle.trim()) return;
+    setFbError(null);
     const { collection, addDoc, serverTimestamp } = window._fbFns;
     const sessionTitle = newSessionTitle;
-    const ref = await addDoc(collection(window._fbDb, "pd_sessions"), {
-      title: sessionTitle, ownerId: user.uid, ownerEmail: user.email,
-      ownerName: user.displayName, members: [user.email], lang,
-      stageIndex: 0, questionIndex: 0, createdAt: serverTimestamp(), status: "active"
-    });
-    const session = { id: ref.id, title: sessionTitle, ownerId: user.uid, ownerEmail: user.email, members: [user.email], lang, stageIndex: 0, questionIndex: 0 };
-    setActiveSession(session);
-    setStageIndex(0); setQuestionIndex(0);
-    setNewSessionTitle(""); setShowNewSession(false);
-    const firstQ = INTERVIEW_STAGES[0].questions[0][lang];
-    const intro = (lang === "nl")
-      ? `Welkom! Ik ga je helpen om "${sessionTitle}" goed in kaart te brengen.\n\nWe doorlopen samen 7 fases: Context, Probleem, Doel, Gebruikers, Scope, AVG en Open Vragen. Aan het einde genereer ik automatisch een werkdocument.\n\nLaten we beginnen met de eerste vraag:\n\n${firstQ}`
-      : `Welcome! I'll help you map out "${sessionTitle}" clearly.\n\nWe'll go through 7 phases: Context, Problem, Goal, Users, Scope, GDPR and Open Questions. At the end I'll generate a working document.\n\nLet's start with the first question:\n\n${firstQ}`;
-    const msgRef = await addDoc(collection(window._fbDb, "pd_sessions", ref.id, "messages"), {
-      role: "assistant", content: intro, createdAt: serverTimestamp()
-    });
-    setMessages([{ id: msgRef.id, role: "assistant", content: intro }]);
-    setView("session");
+    try {
+      const ref = await addDoc(collection(window._fbDb, "pd_sessions"), {
+        title: sessionTitle, ownerId: user.uid, ownerEmail: user.email,
+        ownerName: user.displayName, members: [user.email], lang,
+        stageIndex: 0, questionIndex: 0, createdAt: serverTimestamp(), status: "active"
+      });
+      const session = { id: ref.id, title: sessionTitle, ownerId: user.uid, ownerEmail: user.email, members: [user.email], lang, stageIndex: 0, questionIndex: 0 };
+      setActiveSession(session);
+      setStageIndex(0); setQuestionIndex(0);
+      setNewSessionTitle(""); setShowNewSession(false);
+      const firstQ = INTERVIEW_STAGES[0].questions[0][lang];
+      const intro = (lang === "nl")
+        ? `Welkom! Ik ga je helpen om "${sessionTitle}" goed in kaart te brengen.\n\nWe doorlopen samen 7 fases: Context, Probleem, Doel, Gebruikers, Scope, AVG en Open Vragen. Aan het einde genereer ik automatisch een werkdocument.\n\nLaten we beginnen met de eerste vraag:\n\n${firstQ}`
+        : `Welcome! I'll help you map out "${sessionTitle}" clearly.\n\nWe'll go through 7 phases: Context, Problem, Goal, Users, Scope, GDPR and Open Questions. At the end I'll generate a working document.\n\nLet's start with the first question:\n\n${firstQ}`;
+      const msgRef = await addDoc(collection(window._fbDb, "pd_sessions", ref.id, "messages"), {
+        role: "assistant", content: intro, createdAt: serverTimestamp()
+      });
+      setMessages([{ id: msgRef.id, role: "assistant", content: intro }]);
+      setView("session");
+    } catch (e) {
+      console.error("createSession error:", e);
+      setFbError(`${t("Sessie aanmaken mislukt","Failed to create session")}: ${e.code || e.message}`);
+    }
   };
 
   const openSession = (s) => {
@@ -457,6 +474,13 @@ Tot zo!`
         </div>
       </nav>
 
+      {fbError && (
+        <div className="fb-error-banner">
+          ⚠️ {fbError}
+          <button className="fb-error-dismiss" onClick={()=>setFbError(null)}>✕</button>
+        </div>
+      )}
+
       {view==="dashboard" && (
         <div className="dashboard">
           <div className="dashboard-header">
@@ -499,19 +523,29 @@ Tot zo!`
             </div>
           </div>
           <div className="chat-area">
-            {messages.map(m=>(
-              <div key={m.id} className={`msg ${m.role}`}>
-                <div className="msg-avatar">{m.role==="assistant"?"🤖":"👤"}</div>
-                <div className="msg-bubble">{m.content}</div>
-              </div>
+            {messages.map((m,i)=>(
+              <React.Fragment key={m.id}>
+                <div className={`msg ${m.role}`}>
+                  <div className="msg-bubble">{m.content}</div>
+                </div>
+                {m.role==="assistant" && i===messages.length-1 && !loading && (
+                  <div className="inline-input-row">
+                    <textarea
+                      className="chat-textarea"
+                      placeholder={t("Typ je antwoord... (Enter = versturen, Shift+Enter = nieuwe regel)","Type your answer... (Enter = send, Shift+Enter = new line)")}
+                      value={input}
+                      onChange={e=>setInput(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}}}
+                      rows={1}
+                      autoFocus
+                    />
+                    <button className="send-btn" onClick={sendMessage} disabled={!input.trim()}>↑</button>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
-            {loading && <div className="msg assistant"><div className="msg-avatar">🤖</div><div className="msg-bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
+            {loading && <div className="msg assistant"><div className="msg-bubble"><div className="typing"><div className="dot"/><div className="dot"/><div className="dot"/></div></div></div>}
             <div ref={messagesEndRef}/>
-          </div>
-
-          <div className="chat-input-area">
-            <textarea className="chat-textarea" placeholder={t("Typ je antwoord... (Enter = versturen, Shift+Enter = nieuwe regel)","Type your answer... (Enter = send, Shift+Enter = new line)")} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}}} rows={1}/>
-            <button className="send-btn" onClick={sendMessage} disabled={loading||!input.trim()}>↑</button>
           </div>
         </div>
       )}
