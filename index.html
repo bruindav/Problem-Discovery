@@ -149,7 +149,16 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-16 · 2026-10-23 19:18";
+const APP_BUILD = "fix-17 · 2026-10-23 19:35";
+
+// Haalt het eerste tekstblok uit een Anthropic-API-respons. Claude-modellen
+// kunnen content-blokken van verschillende types teruggeven (bv. "thinking"
+// vóór "text"), dus we pakken niet blind content[0] maar zoeken het eerste
+// blok van het type "text".
+function extractText(data) {
+  const block = data?.content?.find(b => b && b.type === "text" && b.text);
+  return block ? block.text : null;
+}
 
 // Maakt URL's in een foutmelding klikbaar (bv. de Firestore-index-aanmaaklink
 // die Firebase meegeeft bij een failed-precondition fout).
@@ -399,10 +408,13 @@ function App() {
         body: JSON.stringify({ model, max_tokens:1000, system:systemContext, messages:history })
       });
       const data = await resp.json();
-      if (!resp.ok || !data.content?.[0]?.text) {
-        throw new Error(data.error?.message || data.error || `Serverfout (${resp.status})`);
+      const aiText = extractText(data);
+      if (!resp.ok || !aiText) {
+        throw new Error(
+          data.error?.message || data.error ||
+          `Onverwacht antwoord (status ${resp.status}): ${JSON.stringify(data).slice(0,300)}`
+        );
       }
-      const aiText = data.content[0].text;
       await addDoc(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), {
         role:"assistant", content:aiText, createdAt:serverTimestamp()
       });
@@ -432,10 +444,14 @@ Interview:\n${convo}`;
         body: JSON.stringify({ model, max_tokens:1000, messages:[{role:"user",content:prompt}] })
       });
       const data = await resp.json();
-      if (!resp.ok || !data.content?.[0]?.text) {
-        throw new Error(data.error?.message || data.error || `Serverfout (${resp.status})`);
+      const rawText = extractText(data);
+      if (!resp.ok || !rawText) {
+        throw new Error(
+          data.error?.message || data.error ||
+          `Onverwacht antwoord (status ${resp.status}): ${JSON.stringify(data).slice(0,300)}`
+        );
       }
-      const raw = data.content[0].text.replace(/```json|```/g,"").trim();
+      const raw = rawText.replace(/```json|```/g,"").trim();
       const parsed = JSON.parse(raw);
       await setDoc(fbDoc(window._fbDb, "pd_documents", activeSession.id), {
         ...parsed, sessionId:activeSession.id, updatedAt:serverTimestamp()
