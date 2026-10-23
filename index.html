@@ -10,7 +10,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, serverTimestamp, query, orderBy, where, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyApaudujzFMRcItshMqTWCC4qqe-qMfg88",
@@ -28,7 +28,7 @@
     window._fbFns = {
       signInWithPopup, signOut, onAuthStateChanged,
       collection, addDoc, updateDoc, doc, onSnapshot,
-      serverTimestamp, query, orderBy, setDoc
+      serverTimestamp, query, orderBy, where, setDoc
     };
     window._fbReady = true;
     window.dispatchEvent(new Event("fb-ready"));
@@ -258,12 +258,17 @@ function App() {
 
   useEffect(() => {
     if (!user || !fbReady) return;
-    const { collection, query, orderBy, onSnapshot } = window._fbFns;
-    const q = query(collection(window._fbDb, "pd_sessions"), orderBy("createdAt", "desc"));
+    const { collection, query, where, orderBy, onSnapshot } = window._fbFns;
+    // Firestore staat een list-query alleen toe als die zelf al bewijst dat ze
+    // enkel documenten oplevert die aan de beveiligingsregel voldoen. Vandaar
+    // de where("members","array-contains",...) hier i.p.v. client-side filteren.
+    const q = query(
+      collection(window._fbDb, "pd_sessions"),
+      where("members", "array-contains", user.email),
+      orderBy("createdAt", "desc")
+    );
     return onSnapshot(q, snap => {
-      setSessions(snap.docs
-        .filter(d => d.data().members?.includes(user.email) || d.data().ownerId === user.uid)
-        .map(d => ({ id: d.id, ...d.data() })));
+      setSessions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     }, err => {
       console.error("sessions onSnapshot error:", err);
       setFbError(`${t("Sessies laden mislukt","Failed to load sessions")}: ${err.code || err.message}`);
