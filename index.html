@@ -157,9 +157,9 @@
     .oq-table td{padding:.6rem .75rem;color:#c4c4d4;border-bottom:1px solid #1a1a28;vertical-align:top;line-height:1.5}
     .oq-table tr:last-child td{border-bottom:none}
     .owner-chip{background:rgba(99,102,241,.15);color:#a78bfa;padding:.15rem .5rem;border-radius:4px;font-size:.75rem}
-    .textarea-edit{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:6px;padding:.5rem .75rem;font-family:'DM Sans',sans-serif;font-size:.85rem;width:100%;resize:vertical;min-height:60px}
+    .textarea-edit{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:6px;padding:.5rem .75rem;font-family:'DM Sans',sans-serif;font-size:.85rem;width:100%;resize:none;overflow:hidden;display:block;box-sizing:border-box;line-height:1.45;min-height:60px}
     .textarea-edit:focus{outline:none;border-color:#6366f1}
-    .input-edit{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:6px;padding:.4rem .6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;width:100%}
+    .input-edit{background:#1b1b28;border:1px solid #3a3a4e;color:#e8e8f0;border-radius:6px;padding:.4rem .6rem;font-family:'DM Sans',sans-serif;font-size:.82rem;width:100%;resize:none;overflow:hidden;display:block;box-sizing:border-box;line-height:1.45}
     .input-edit:focus{outline:none;border-color:#6366f1}
     .add-row-btn{background:transparent;border:1px dashed #3a3a4e;color:#6c6c7a;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.78rem;margin-top:.5rem;font-family:'DM Sans',sans-serif}
     .add-row-btn:hover{border-color:#6366f1;color:#a78bfa}
@@ -179,7 +179,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-27 · 2026-10-23 23:50";
+const APP_BUILD = "fix-28 · 2026-10-24 11:55";
 
 // Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
 const MODEL_PRICING = {
@@ -237,6 +237,24 @@ function linkify(text) {
       ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{color:"#ffd9dd",textDecoration:"underline"}}>{part}</a>
       : part
   );
+}
+
+// fix-28: tekstvak dat automatisch meegroeit met de inhoud, zodat je bij het
+// bewerken van het document nooit binnen een veld hoeft te scrollen.
+function AutoGrow({ value, onChange, className, style, placeholder }) {
+  const ref = React.useRef(null);
+  const resize = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + 2 + "px";
+  };
+  React.useLayoutEffect(resize, [value]);
+  React.useEffect(() => {
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+  return <textarea ref={ref} rows={1} className={className} style={style} placeholder={placeholder} value={value} onChange={onChange} />;
 }
 
 // fix-26: eenvoudige slug voor pd_authors-document-ids, zodat dezelfde naam
@@ -945,18 +963,18 @@ Tot zo!`
 
           <div className="doc-section">
             <div className="doc-section-title">💡 {t("Waardehypothese","Value Hypothesis")}</div>
-            {editingDoc?<textarea className="textarea-edit" value={docDraft.waardehypothese} onChange={e=>setDocDraft({...docDraft,waardehypothese:e.target.value})}/>:<p>{document_.waardehypothese}</p>}
+            {editingDoc?<AutoGrow className="textarea-edit" value={docDraft.waardehypothese} onChange={e=>setDocDraft({...docDraft,waardehypothese:e.target.value})}/>:<p>{document_.waardehypothese}</p>}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">🎯 {t("Strategische Relevantie","Strategic Relevance")}</div>
-            {editingDoc?<textarea className="textarea-edit" value={docDraft.strategischeRelevantie} onChange={e=>setDocDraft({...docDraft,strategischeRelevantie:e.target.value})}/>:<p>{document_.strategischeRelevantie}</p>}
+            {editingDoc?<AutoGrow className="textarea-edit" value={docDraft.strategischeRelevantie} onChange={e=>setDocDraft({...docDraft,strategischeRelevantie:e.target.value})}/>:<p>{document_.strategischeRelevantie}</p>}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">👥 {t("Voor Wie","For Whom")}</div>
             {(editingDoc?docDraft.voorWie:document_.voorWie)?.map((r,i)=>(
               <div key={i} className="role-card">
                 {editingDoc
-                  ? <><input className="input-edit" style={{marginBottom:".4rem"}} placeholder="Rol" value={docDraft.voorWie[i].rol} onChange={e=>{const v=[...docDraft.voorWie];v[i]={...v[i],rol:e.target.value};setDocDraft({...docDraft,voorWie:v})}}/><input className="input-edit" placeholder="Beschrijving" value={docDraft.voorWie[i].beschrijving} onChange={e=>{const v=[...docDraft.voorWie];v[i]={...v[i],beschrijving:e.target.value};setDocDraft({...docDraft,voorWie:v})}}/></>
+                  ? <><AutoGrow className="input-edit" style={{marginBottom:".4rem"}} placeholder="Rol" value={docDraft.voorWie[i].rol} onChange={e=>{const v=[...docDraft.voorWie];v[i]={...v[i],rol:e.target.value};setDocDraft({...docDraft,voorWie:v})}}/><AutoGrow className="input-edit" placeholder="Beschrijving" value={docDraft.voorWie[i].beschrijving} onChange={e=>{const v=[...docDraft.voorWie];v[i]={...v[i],beschrijving:e.target.value};setDocDraft({...docDraft,voorWie:v})}}/></>
                   : <><div className="role-name">{r.rol}</div><div className="role-desc">{r.beschrijving}</div></>}
               </div>
             ))}
@@ -964,16 +982,16 @@ Tot zo!`
           <div className="doc-section scope-grid">
             <div>
               <div className="doc-section-title">✅ {t("Binnen Scope","In Scope")}</div>
-              <ul className="doc-list">{(editingDoc?docDraft.scope:document_.scope)?.map((s,i)=><li key={i}>{editingDoc?<input className="input-edit" value={docDraft.scope[i]} onChange={e=>{const v=[...docDraft.scope];v[i]=e.target.value;setDocDraft({...docDraft,scope:v})}}/>:s}</li>)}</ul>
+              <ul className="doc-list">{(editingDoc?docDraft.scope:document_.scope)?.map((s,i)=><li key={i}>{editingDoc?<AutoGrow className="input-edit" value={docDraft.scope[i]} onChange={e=>{const v=[...docDraft.scope];v[i]=e.target.value;setDocDraft({...docDraft,scope:v})}}/>:s}</li>)}</ul>
             </div>
             <div>
               <div className="doc-section-title">🚫 {t("Buiten Scope","Out of Scope")}</div>
-              <ul className="doc-list">{(editingDoc?docDraft.buitenScope:document_.buitenScope)?.map((s,i)=><li key={i}>{editingDoc?<input className="input-edit" value={docDraft.buitenScope[i]} onChange={e=>{const v=[...docDraft.buitenScope];v[i]=e.target.value;setDocDraft({...docDraft,buitenScope:v})}}/>:s}</li>)}</ul>
+              <ul className="doc-list">{(editingDoc?docDraft.buitenScope:document_.buitenScope)?.map((s,i)=><li key={i}>{editingDoc?<AutoGrow className="input-edit" value={docDraft.buitenScope[i]} onChange={e=>{const v=[...docDraft.buitenScope];v[i]=e.target.value;setDocDraft({...docDraft,buitenScope:v})}}/>:s}</li>)}</ul>
             </div>
           </div>
           <div className="doc-section">
             <div className="doc-section-title">☑️ {t("Acceptatiecriteria","Acceptance Criteria")}</div>
-            <ul className="doc-list">{(editingDoc?docDraft.acceptatiecriteria:document_.acceptatiecriteria)?.map((s,i)=><li key={i}>{editingDoc?<input className="input-edit" value={docDraft.acceptatiecriteria[i]} onChange={e=>{const v=[...docDraft.acceptatiecriteria];v[i]=e.target.value;setDocDraft({...docDraft,acceptatiecriteria:v})}}/>:s}</li>)}</ul>
+            <ul className="doc-list">{(editingDoc?docDraft.acceptatiecriteria:document_.acceptatiecriteria)?.map((s,i)=><li key={i}>{editingDoc?<AutoGrow className="input-edit" value={docDraft.acceptatiecriteria[i]} onChange={e=>{const v=[...docDraft.acceptatiecriteria];v[i]=e.target.value;setDocDraft({...docDraft,acceptatiecriteria:v})}}/>:s}</li>)}</ul>
           </div>
           <div className="doc-section">
             <div className="doc-section-title">🔒 AVG / GDPR</div>
@@ -981,7 +999,7 @@ Tot zo!`
               {["persoonsgegevens","dpia","verwerkingsverantwoordelijke"].map(key=>(
                 <div className="avg-item" key={key}>
                   <label>{key==="persoonsgegevens"?t("Persoonsgegevens","Personal data"):key==="dpia"?"DPIA":t("Verwerkingsverantwoordelijke","Data controller")}</label>
-                  {editingDoc?<input className="input-edit" value={docDraft.avg?.[key]||""} onChange={e=>setDocDraft({...docDraft,avg:{...docDraft.avg,[key]:e.target.value}})}/>:<p>{document_.avg?.[key]}</p>}
+                  {editingDoc?<AutoGrow className="input-edit" value={docDraft.avg?.[key]||""} onChange={e=>setDocDraft({...docDraft,avg:{...docDraft.avg,[key]:e.target.value}})}/>:<p>{document_.avg?.[key]}</p>}
                 </div>
               ))}
             </div>
@@ -994,7 +1012,7 @@ Tot zo!`
                 {(editingDoc?docDraft.openVragen:document_.openVragen)?.map((q,i)=>(
                   <tr key={i}>
                     {editingDoc
-                      ? <><td><input className="input-edit" value={docDraft.openVragen[i].vraag} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],vraag:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td><td><input className="input-edit" value={docDraft.openVragen[i].aanWie} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],aanWie:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td><td><input className="input-edit" value={docDraft.openVragen[i].eigenaar} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],eigenaar:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td></>
+                      ? <><td><AutoGrow className="input-edit" value={docDraft.openVragen[i].vraag} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],vraag:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td><td><AutoGrow className="input-edit" value={docDraft.openVragen[i].aanWie} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],aanWie:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td><td><AutoGrow className="input-edit" value={docDraft.openVragen[i].eigenaar} onChange={e=>{const v=[...docDraft.openVragen];v[i]={...v[i],eigenaar:e.target.value};setDocDraft({...docDraft,openVragen:v})}}/></td></>
                       : <><td>{q.vraag}</td><td>{q.aanWie}</td><td><span className="owner-chip">{q.eigenaar}</span></td></>}
                   </tr>
                 ))}
@@ -1010,7 +1028,7 @@ Tot zo!`
                 {(editingDoc?docDraft.acties:document_.acties)?.map((a,i)=>(
                   <tr key={i}>
                     {editingDoc
-                      ? <><td><input className="input-edit" value={docDraft.acties[i].actie} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],actie:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td><td><input className="input-edit" value={docDraft.acties[i].verantwoordelijke} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],verantwoordelijke:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td><td><input className="input-edit" value={docDraft.acties[i].eigenaar} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],eigenaar:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td></>
+                      ? <><td><AutoGrow className="input-edit" value={docDraft.acties[i].actie} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],actie:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td><td><AutoGrow className="input-edit" value={docDraft.acties[i].verantwoordelijke} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],verantwoordelijke:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td><td><AutoGrow className="input-edit" value={docDraft.acties[i].eigenaar} onChange={e=>{const v=[...docDraft.acties];v[i]={...v[i],eigenaar:e.target.value};setDocDraft({...docDraft,acties:v})}}/></td></>
                       : <><td>{a.actie}</td><td>{a.verantwoordelijke}</td><td><span className="owner-chip">{a.eigenaar}</span></td></>}
                   </tr>
                 ))}
