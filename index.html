@@ -120,6 +120,14 @@
     .msg-group{display:flex;flex-direction:column;min-width:0;max-width:600px}
     .msg-author{font-size:.72rem;color:#9a9aa8;margin-bottom:.25rem;padding:0 .3rem}
     .msg.user .msg-author{text-align:right}
+    .msg.comment{justify-content:flex-end}
+    .msg.comment .msg-bubble{background:#fff4cc;color:#4a3b00;border-radius:20px 6px 20px 20px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+    .msg.comment .msg-author{text-align:right}
+    .comment-box{grid-column:1 / -1;margin-top:.9rem;display:flex;flex-direction:column;gap:.4rem;align-items:flex-start;width:100%}
+    .comment-item{font-size:.82rem;color:#d9c98a;background:rgba(255,220,100,.08);border-left:3px solid #c9a227;padding:.4rem .65rem;border-radius:4px;width:100%;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:anywhere}
+    .comment-btn{background:none;border:1px dashed #3a3a4e;color:#9a9aa8;border-radius:6px;padding:.25rem .7rem;font-size:.75rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+    .comment-btn:hover{border-color:#6366f1;color:#a78bfa}
+    .comment-actions{display:flex;gap:.5rem;margin-top:.4rem}
     .inline-input-row{display:flex;gap:.6rem;align-items:flex-end;max-width:600px;align-self:flex-start;width:100%;margin-top:-.25rem;min-width:0;box-sizing:border-box}
     .typing{display:flex;gap:4px;padding:.3rem .1rem}
     .dot{width:6px;height:6px;border-radius:50%;background:#9a9aa8;animation:bounce 1.2s infinite}
@@ -179,7 +187,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 // Build-versielabel: handmatig bijgewerkt bij elke push, zichtbaar rechtsonder in de app.
 // Zo is bij elke test direct duidelijk welke fix daadwerkelijk live staat.
-const APP_BUILD = "fix-28 · 2026-10-24 11:55";
+const APP_BUILD = "fix-29 · 2026-10-24 12:15";
 
 // Prijzen per miljoen tokens (USD), voor het schatten van API-kosten per sessie.
 const MODEL_PRICING = {
@@ -256,6 +264,18 @@ function AutoGrow({ value, onChange, className, style, placeholder }) {
   }, []);
   return <textarea ref={ref} rows={1} className={className} style={style} placeholder={placeholder} value={value} onChange={onChange} />;
 }
+
+// fix-29: blokken van het verslag waarop commentaar gegeven kan worden.
+const DOC_SECTIONS = {
+  waardehypothese:{label:{nl:"Waardehypothese",en:"Value Hypothesis"},fields:["waardehypothese"]},
+  strategischeRelevantie:{label:{nl:"Strategische Relevantie",en:"Strategic Relevance"},fields:["strategischeRelevantie"]},
+  voorWie:{label:{nl:"Voor Wie",en:"For Whom"},fields:["voorWie"]},
+  scope:{label:{nl:"Scope",en:"Scope"},fields:["scope","buitenScope"]},
+  acceptatiecriteria:{label:{nl:"Acceptatiecriteria",en:"Acceptance Criteria"},fields:["acceptatiecriteria"]},
+  avg:{label:{nl:"AVG / GDPR",en:"AVG / GDPR"},fields:["avg"]},
+  openVragen:{label:{nl:"Openstaande Vragen",en:"Open Questions"},fields:["openVragen"]},
+  acties:{label:{nl:"Acties",en:"Actions"},fields:["acties"]},
+};
 
 // fix-26: eenvoudige slug voor pd_authors-document-ids, zodat dezelfde naam
 // niet dubbel wordt opgeslagen (hoofdletterongevoelig, spaties -> "-").
@@ -344,6 +364,9 @@ function App() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [commentSection, setCommentSection] = useState(null);
+  const [commentText, setCommentText] = useState("");
+  const [commentBusy, setCommentBusy] = useState(false);
   const [includeTranscript, setIncludeTranscript] = useState(false);
   const [knownAuthors, setKnownAuthors] = useState([]);
   const [answerAsName, setAnswerAsName] = useState(null);
@@ -530,7 +553,7 @@ function App() {
     const stage = INTERVIEW_STAGES[stageIndex];
     const isLastQ = questionIndex >= stage.questions.length - 1;
     const isLastStage = stageIndex >= INTERVIEW_STAGES.length - 1;
-    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    const history = messages.filter(m => m.role !== "comment").map(m => ({ role: m.role, content: m.content }));
     history.push({ role: "user", content: userMsg });
     const systemContext = `${SYSTEM_PROMPT(lang)}\n\nHuidige fase: ${stage.label[lang]}\nHuidige vraag was: ${stage.questions[questionIndex][lang]}\n\n${isLastQ && !isLastStage ? `Na je reactie, introduceer de volgende fase: "${INTERVIEW_STAGES[stageIndex+1].label[lang]}" en stel de eerste vraag.` : isLastStage && isLastQ ? "Dit was de laatste vraag. Geef een afsluitende samenvatting en zeg dat het document nu gegenereerd kan worden via de knop bovenaan." : "Stel een verdiepende vervolgvraag OF beweeg naar de volgende vraag als het antwoord volledig is."}`;
     try {
@@ -597,7 +620,7 @@ function App() {
   const generateDocument = async () => {
     setLoading(true);
     const { doc: fbDoc, setDoc, updateDoc, serverTimestamp, increment } = window._fbFns;
-    const convo = messages.map(m => `${m.role==="user"?"Business Owner":"Analist"}: ${m.content}`).join("\n\n");
+    const convo = messages.map(m => m.role==="comment" ? `Commentaar van ${m.authorName||"stakeholder"} op blok "${DOC_SECTIONS[m.sectionKey]?.label.nl||m.sectionKey}" (verwerk dit in het document): ${m.content}` : `${m.role==="user"?"Business Owner":"Analist"}: ${m.content}`).join("\n\n");
     const prompt = `Op basis van dit interview, genereer een feature beschrijving werkdocument in JSON met deze exacte structuur:
 {"title":"...","waardehypothese":"...","strategischeRelevantie":"...","voorWie":[{"rol":"...","beschrijving":"..."}],"scope":["..."],"buitenScope":["..."],"acceptatiecriteria":["..."],"avg":{"persoonsgegevens":"...","dpia":"...","verwerkingsverantwoordelijke":"..."},"openVragen":[{"vraag":"...","aanWie":"...","eigenaar":"..."}],"acties":[{"actie":"...","verantwoordelijke":"...","eigenaar":"..."}]}
 Belangrijk: zorg dat de output 100% geldige JSON is. Gebruik GEEN letterlijke regelovergangen binnen een stringwaarde — gebruik daar \\n voor. Reageer ALLEEN met de JSON, geen uitleg of markdown.
@@ -648,6 +671,81 @@ Interview:\n${convo}`;
       alert((lang==="nl" ? "Genereren mislukt: " : "Generation failed: ") + e.message);
     }
     setLoading(false);
+  };
+
+  // fix-29: commentaar op een blok van het verslag. De AI verwerkt het in dat
+  // blok; het commentaar wordt daarna ook als "comment" in de vraag-antwoordlijst bewaard.
+  const processComment = async () => {
+    const key = commentSection, text = commentText.trim();
+    if (!key || !text || commentBusy || !document_) return;
+    const sec = DOC_SECTIONS[key];
+    setCommentBusy(true);
+    const { collection, addDoc, serverTimestamp, doc: fbDoc, updateDoc, increment } = window._fbFns;
+    const authorName = user.displayName || user.email;
+    try {
+      const current = {};
+      sec.fields.forEach(f => { current[f] = document_[f]; });
+      const prompt = `Je past één blok van een feature-beschrijving aan op basis van commentaar van een stakeholder (${authorName}).
+Huidige inhoud van het blok "${sec.label.nl}" (JSON):
+${JSON.stringify(current)}
+
+Commentaar:
+${text}
+
+Verwerk het commentaar in het blok. Behoud de structuur en alle sleutels exact en wijzig alleen wat het commentaar vereist. Schrijf in de taal van de bestaande tekst.
+Geef ALLEEN geldige JSON terug met exact deze sleutels: ${sec.fields.join(", ")}. Gebruik GEEN letterlijke regelovergangen binnen een stringwaarde — gebruik daar \\n voor. Geen uitleg of markdown.`;
+      const idToken = await window._fbAuth.currentUser.getIdToken();
+      const resp = await fetch("/api/claude", {
+        method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer "+idToken},
+        body: JSON.stringify({ model, max_tokens:4096, messages:[{role:"user",content:prompt}] })
+      });
+      const data = await resp.json();
+      const rawText = extractText(data);
+      if (!resp.ok || !rawText) {
+        throw new Error(data.error?.message || data.error || `Onverwacht antwoord (status ${resp.status}): ${JSON.stringify(data).slice(0,300)}`);
+      }
+      const raw = rawText.replace(/```json|```/g,"").trim();
+      let parsed;
+      try { parsed = JSON.parse(raw); }
+      catch { parsed = JSON.parse(sanitizeJsonText(raw)); }
+      if (!sec.fields.every(f => f in parsed)) throw new Error(t("AI gaf niet alle velden terug","AI did not return all fields"));
+      const update = { updatedAt: serverTimestamp() };
+      sec.fields.forEach(f => { update[f] = parsed[f]; });
+      await updateDoc(fbDoc(window._fbDb, "pd_documents", activeSession.id), update);
+      await addDoc(collection(window._fbDb, "pd_sessions", activeSession.id, "messages"), {
+        role:"comment", content:text, sectionKey:key, createdAt:serverTimestamp(),
+        stageIndex, authorName, authorEmail:user.email
+      });
+      const inTok = data.usage?.input_tokens || 0, outTok = data.usage?.output_tokens || 0;
+      await updateDoc(fbDoc(window._fbDb, "pd_sessions", activeSession.id), {
+        costUsd: increment(calcCost(model, inTok, outTok)), inputTokens: increment(inTok), outputTokens: increment(outTok)
+      });
+      setCommentText(""); setCommentSection(null);
+    } catch(e) {
+      console.error(e);
+      alert(t("Commentaar verwerken mislukt: ","Processing comment failed: ") + e.message);
+    }
+    setCommentBusy(false);
+  };
+
+  const renderComments = (key) => {
+    if (editingDoc) return null;
+    const existing = messages.filter(m => m.role==="comment" && m.sectionKey===key);
+    const open = commentSection===key;
+    return (
+      <div className="comment-box">
+        {existing.map(m => <div key={m.id} className="comment-item"><b>{m.authorName}</b>: {m.content}</div>)}
+        {!open
+          ? <button className="comment-btn" onClick={()=>{setCommentSection(key);setCommentText("");}}>💬 {t("Commentaar","Comment")}</button>
+          : <div style={{width:"100%"}}>
+              <AutoGrow className="textarea-edit" placeholder={t("Typ je commentaar op dit blok...","Type your comment on this block...")} value={commentText} onChange={e=>setCommentText(e.target.value)} />
+              <div className="comment-actions">
+                <button className="btn btn-primary btn-sm" disabled={commentBusy||!commentText.trim()} onClick={processComment}>{commentBusy?"⏳":"✓"} {t("Verwerk in verslag","Apply to report")}</button>
+                <button className="btn btn-ghost btn-sm" disabled={commentBusy} onClick={()=>setCommentSection(null)}>✕</button>
+              </div>
+            </div>}
+      </div>
+    );
   };
 
   const saveDocument = async () => {
@@ -724,7 +822,7 @@ Interview:\n${convo}`;
       pdf.addPage(); y = 56;
       heading(t("Bijlage: Volledig interview", "Appendix: Full interview"));
       messages.forEach(m => {
-        const label = m.role === "user" ? (m.authorName || t("Antwoord", "Answer")) : t("Vraag", "Question");
+        const label = m.role === "comment" ? `${t("Commentaar op","Comment on")} ${DOC_SECTIONS[m.sectionKey]?.label[lang]||""}${m.authorName?" ("+m.authorName+")":""}` : m.role === "user" ? (m.authorName || t("Antwoord", "Answer")) : t("Vraag", "Question");
         ensureSpace(16);
         pdf.setFont("helvetica", "bold"); pdf.setFontSize(10.5);
         pdf.text(label + ":", marginL, y); y += 14;
@@ -897,7 +995,7 @@ Tot zo!`
                 <React.Fragment key={m.id}>
                   <div className={`msg ${m.role}`} ref={el=>{messageRefs.current[m.id]=el;}}>
                     <div className="msg-group">
-                      {m.role==="user" && m.authorName && <div className="msg-author">{m.authorName}</div>}
+                      {(m.role==="user"||m.role==="comment") && m.authorName && <div className="msg-author">{m.role==="comment" && `💬 ${t("Commentaar op","Comment on")} ${DOC_SECTIONS[m.sectionKey]?.label[lang]||""} · `}{m.authorName}</div>}
                       <div className="msg-bubble">{m.content}</div>
                     </div>
                   </div>
@@ -964,10 +1062,12 @@ Tot zo!`
           <div className="doc-section">
             <div className="doc-section-title">💡 {t("Waardehypothese","Value Hypothesis")}</div>
             {editingDoc?<AutoGrow className="textarea-edit" value={docDraft.waardehypothese} onChange={e=>setDocDraft({...docDraft,waardehypothese:e.target.value})}/>:<p>{document_.waardehypothese}</p>}
+          {renderComments("waardehypothese")}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">🎯 {t("Strategische Relevantie","Strategic Relevance")}</div>
             {editingDoc?<AutoGrow className="textarea-edit" value={docDraft.strategischeRelevantie} onChange={e=>setDocDraft({...docDraft,strategischeRelevantie:e.target.value})}/>:<p>{document_.strategischeRelevantie}</p>}
+          {renderComments("strategischeRelevantie")}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">👥 {t("Voor Wie","For Whom")}</div>
@@ -978,6 +1078,7 @@ Tot zo!`
                   : <><div className="role-name">{r.rol}</div><div className="role-desc">{r.beschrijving}</div></>}
               </div>
             ))}
+          {renderComments("voorWie")}
           </div>
           <div className="doc-section scope-grid">
             <div>
@@ -988,10 +1089,12 @@ Tot zo!`
               <div className="doc-section-title">🚫 {t("Buiten Scope","Out of Scope")}</div>
               <ul className="doc-list">{(editingDoc?docDraft.buitenScope:document_.buitenScope)?.map((s,i)=><li key={i}>{editingDoc?<AutoGrow className="input-edit" value={docDraft.buitenScope[i]} onChange={e=>{const v=[...docDraft.buitenScope];v[i]=e.target.value;setDocDraft({...docDraft,buitenScope:v})}}/>:s}</li>)}</ul>
             </div>
+          {renderComments("scope")}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">☑️ {t("Acceptatiecriteria","Acceptance Criteria")}</div>
             <ul className="doc-list">{(editingDoc?docDraft.acceptatiecriteria:document_.acceptatiecriteria)?.map((s,i)=><li key={i}>{editingDoc?<AutoGrow className="input-edit" value={docDraft.acceptatiecriteria[i]} onChange={e=>{const v=[...docDraft.acceptatiecriteria];v[i]=e.target.value;setDocDraft({...docDraft,acceptatiecriteria:v})}}/>:s}</li>)}</ul>
+          {renderComments("acceptatiecriteria")}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">🔒 AVG / GDPR</div>
@@ -1003,6 +1106,7 @@ Tot zo!`
                 </div>
               ))}
             </div>
+          {renderComments("avg")}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">❓ {t("Openstaande Vragen","Open Questions")}</div>
@@ -1019,6 +1123,7 @@ Tot zo!`
               </tbody>
             </table>
             {editingDoc && <button className="add-row-btn" onClick={()=>setDocDraft({...docDraft,openVragen:[...(docDraft.openVragen||[]),{vraag:"",aanWie:"",eigenaar:""}]})}>+ {t("Vraag toevoegen","Add question")}</button>}
+          {renderComments("openVragen")}
           </div>
           <div className="doc-section">
             <div className="doc-section-title">⚡ {t("Acties","Actions")}</div>
@@ -1035,6 +1140,7 @@ Tot zo!`
               </tbody>
             </table>
             {editingDoc && <button className="add-row-btn" onClick={()=>setDocDraft({...docDraft,acties:[...(docDraft.acties||[]),{actie:"",verantwoordelijke:"",eigenaar:""}]})}>+ {t("Actie toevoegen","Add action")}</button>}
+          {renderComments("acties")}
           </div>
         </div>
       )}
